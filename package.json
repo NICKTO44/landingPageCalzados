@@ -1,0 +1,11 @@
+{
+  "name": "shoes-store-railway",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd backend && npm install",
+    "start": "cd backend && npm start"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
