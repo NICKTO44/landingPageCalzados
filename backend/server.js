@@ -18,9 +18,10 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+// IMPORTANTE: Los archivos estáticos DEBEN ir antes de las rutas
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de base de datos
+// Configuración de base de datos para Railway
 function getDatabaseConfig() {
   // Si existe DATABASE_URL, usarla (Railway)
   if (process.env.DATABASE_URL) {
@@ -47,6 +48,7 @@ function getDatabaseConfig() {
 }
 
 const dbConfig = getDatabaseConfig();
+let db;
 
 // Conexión a la base de datos
 async function initDatabase() {
@@ -104,10 +106,10 @@ async function insertInitialData() {
     
     const products = [
       {
-        title: "Zapatos Oxford Clásicos",
+        title: "Zapato Boni urbanos color negro",
         brand: "Elegance",
         price: 299.99,
-        image_url: "https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=900&h=600&fit=crop&crop=center",
+        image_url: "/imagenes/imagen1.jpeg",
         sizes: [
           { size: "38", stock: 2 },
           { size: "39", stock: 0 },
@@ -120,7 +122,7 @@ async function insertInitialData() {
         title: "Sneakers Deportivos Premium",
         brand: "SportMax",
         price: 159.99,
-        image_url: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=900&h=600&fit=crop&crop=center",
+        image_url: "/imagenes/imagen2.jpeg",
         sizes: [
           { size: "36", stock: 3 },
           { size: "37", stock: 0 },
@@ -133,7 +135,7 @@ async function insertInitialData() {
         title: "Botas de Cuero Artesanales",
         brand: "CraftMaster",
         price: 449.99,
-        image_url: "https://images.unsplash.com/photo-1608667508764-33cf0726dde9?w=900&h=600&fit=crop&crop=center",
+        image_url: "/imagenes/imagen3.jpeg",
         sizes: [
           { size: "39", stock: 0 },
           { size: "40", stock: 0 },
@@ -295,9 +297,15 @@ app.post('/api/admin/products', async (req, res) => {
   }
 });
 
-// Servir frontend estático
+// IMPORTANTE: Esta ruta debe ir AL FINAL, después de todas las otras rutas
+// Servir frontend estático solo para rutas que no son archivos
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  // Solo servir index.html para rutas que no contengan extensiones de archivo
+  if (!req.path.includes('.') || req.path === '/') {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.status(404).send('Archivo no encontrado');
+  }
 });
 
 // Socket.IO para conexiones en tiempo real
