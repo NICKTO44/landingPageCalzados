@@ -21,15 +21,32 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configuración de base de datos
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'shoes_store',
-  port: process.env.DB_PORT || 3306
-};
+function getDatabaseConfig() {
+  // Si existe DATABASE_URL, usarla (Railway)
+  if (process.env.DATABASE_URL) {
+    const url = require('url');
+    const dbUrl = url.parse(process.env.DATABASE_URL);
+    
+    return {
+      host: dbUrl.hostname,
+      port: parseInt(dbUrl.port),
+      user: dbUrl.auth.split(':')[0],
+      password: dbUrl.auth.split(':')[1],
+      database: dbUrl.pathname.slice(1), // Remover el '/' inicial
+    };
+  }
+  
+  // Configuración local/alternativa
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'shoes_store',
+    port: process.env.DB_PORT || 3306
+  };
+}
 
-let db;
+const dbConfig = getDatabaseConfig();
 
 // Conexión a la base de datos
 async function initDatabase() {
