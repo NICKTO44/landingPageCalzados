@@ -170,6 +170,19 @@ async function loadProducts() {
         }
         
         AppState.currentProducts = products;
+        
+        // Debug: Verificar estructura de precios
+        if (products.length > 0) {
+            const firstProduct = products[0];
+            Logger.info('Estructura del primer producto:', {
+                id: firstProduct.id,
+                title: firstProduct.title,
+                price: firstProduct.price,
+                priceType: typeof firstProduct.price,
+                rawProduct: firstProduct
+            });
+        }
+        
         renderProducts(products);
         populateBrandFilter();
         
@@ -223,7 +236,6 @@ function showErrorState(message) {
         `;
     }
 }
-
 /* =========================
    SHOESSTORE APP - PARTE 2/4
    EVENT LISTENERS Y RENDERS
@@ -1452,16 +1464,26 @@ function debounce(func, wait) {
 }
 
 function formatPrice(price) {
-    if (typeof price !== 'number' || isNaN(price)) {
+    // Convertir a número si es string
+    let numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    
+    // Validar que sea un número válido
+    if (typeof numPrice !== 'number' || isNaN(numPrice) || numPrice < 0) {
+        Logger.warn('Precio inválido recibido:', price);
         return 'Precio no disponible';
     }
     
-    return new Intl.NumberFormat('es-PE', {
-        style: 'currency',
-        currency: 'PEN',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(price);
+    try {
+        return new Intl.NumberFormat('es-PE', {
+            style: 'currency',
+            currency: 'PEN',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numPrice);
+    } catch (error) {
+        Logger.error('Error formateando precio:', error);
+        return `S/ ${numPrice.toFixed(2)}`;
+    }
 }
 
 function escapeHtml(text) {
@@ -1473,22 +1495,49 @@ function escapeHtml(text) {
 }
 
 function validateProductData(product) {
-    if (!product || typeof product !== 'object') return false;
+    if (!product || typeof product !== 'object') {
+        Logger.warn('Producto inválido:', product);
+        return false;
+    }
     
     const required = ['id', 'title', 'brand', 'price', 'image_url', 'sizes'];
-    const hasRequired = required.every(field => product.hasOwnProperty(field));
+    const hasRequired = required.every(field => {
+        const hasField = product.hasOwnProperty(field);
+        if (!hasField) {
+            Logger.warn(`Campo faltante en producto ${product.id || 'unknown'}:`, field);
+        }
+        return hasField;
+    });
     
     if (!hasRequired) return false;
     
-    // Validar sizes
-    if (!Array.isArray(product.sizes) || product.sizes.length === 0) return false;
+    // Validar precio específicamente
+    const price = parseFloat(product.price);
+    if (isNaN(price) || price < 0) {
+        Logger.warn(`Precio inválido en producto ${product.id}:`, product.price);
+        return false;
+    }
     
-    return product.sizes.every(size => 
-        size.hasOwnProperty('size') && 
-        size.hasOwnProperty('stock') && 
-        typeof size.stock === 'number' && 
-        size.stock >= 0
-    );
+    // Validar sizes
+    if (!Array.isArray(product.sizes) || product.sizes.length === 0) {
+        Logger.warn(`Sizes inválidas en producto ${product.id}:`, product.sizes);
+        return false;
+    }
+    
+    const validSizes = product.sizes.every(size => {
+        const valid = size.hasOwnProperty('size') && 
+                     size.hasOwnProperty('stock') && 
+                     typeof size.stock === 'number' && 
+                     size.stock >= 0;
+        
+        if (!valid) {
+            Logger.warn(`Size inválida en producto ${product.id}:`, size);
+        }
+        
+        return valid;
+    });
+    
+    return validSizes;
 }
 
 function sanitizeInput(input) {
