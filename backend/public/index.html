@@ -1,876 +1,303 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catálogo de Zapatos - Elegancia y Calidad (Con stock)</title>
-<meta name="description" content="Descubre nuestra colección exclusiva de zapatos de las mejores marcas. Calidad, estilo y comodidad en cada paso.">
-<style>
-  :root{
-    --color-primary:#2c3e50;
-    --color-primary-light:#34495e;
-    --color-secondary:#e74c3c;
-    --color-accent:#f39c12;
-    --color-white:#ffffff;
-    --color-light-gray:#f8f9fa;
-    --color-gray:#6c757d;
-    --color-dark-gray:#495057;
-    --color-black:#212529;
-    --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --border-radius:8px;
-    --border-radius-lg:12px;
-    --shadow-sm:0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-    --shadow-md:0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:var(--font-primary);line-height:1.6;color:var(--color-black);background:var(--color-light-gray)}
-  img{max-width:100%;height:auto;display:block}
-  .container{max-width:1200px;margin:0 auto;padding:0 16px}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-weight:600}
-  .btn-primary{background:var(--color-primary);color:var(--color-white);border:none}
-  .btn-secondary{background:var(--color-secondary);color:var(--color-white);border:none}
-  .btn-outline{background:transparent;color:var(--color-primary);border:2px solid var(--color-primary)}
-  .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-  /* header */
-  .header{background:var(--color-white);box-shadow:var(--shadow-sm);position:sticky;top:0;z-index:100}
-  .header-content{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
-  .logo{font-size:24px;font-weight:800;color:var(--color-primary);text-decoration:none}
-  .search-filters{display:flex;gap:16px;align-items:center}
-  .search-input{padding:8px 14px;border-radius:8px;border:2px solid #e9ecef;width:250px}
-  .filter-select{padding:8px 12px;border-radius:8px;border:2px solid #e9ecef;background:#fff}
-  .connection-status{display:flex;align-items:center;gap:8px;font-size:12px}
-  .connection-dot{width:8px;height:8px;border-radius:50%;background:#28a745}
-  .connection-dot.disconnected{background:#dc3545}
-
-  /* hero */
-  .hero{background:linear-gradient(135deg,var(--color-primary),var(--color-primary-light));color:#fff;padding:48px 0}
-  .hero-content{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
-  .hero-text h1{font-size:32px;margin-bottom:16px}
-  .hero-text p{opacity:0.95;margin-bottom:20px}
-  .hero-image img{max-width:400px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,0.15)}
-  .hero-image img:hover{transform:scale(1.03);transition:var(--transition)}
-
-  /* products */
-  .products-section{padding:48px 0}
-  .section-header{text-align:center;margin-bottom:32px}
-  .section-header h2{color:var(--color-primary);font-size:28px}
-  .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:32px}
-  .product-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);cursor:pointer;transition:var(--transition)}
-  .product-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-md)}
-  .product-image{height:250px;overflow:hidden}
-  .product-image img{width:100%;height:100%;object-fit:cover;transition:var(--transition)}
-  .product-info{padding:16px}
-  .product-title{font-weight:700;color:var(--color-primary);margin-bottom:6px}
-  .product-brand{color:var(--color-gray);margin-bottom:10px}
-  .product-price{color:var(--color-secondary);font-weight:800;margin-bottom:12px}
-  .product-sizes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-  .size-tag{background:var(--color-light-gray);color:var(--color-dark-gray);padding:6px 10px;border-radius:8px;position:relative;font-weight:600}
-  .size-tag.out{opacity:0.45;text-decoration:line-through}
-  .size-tag.out .size-x{position:absolute;right:6px;top:0;font-weight:900;color:var(--color-secondary);font-size:12px}
-  .product-card .no-stock-label{display:inline-block;margin-top:8px;color:var(--color-secondary);font-weight:700}
-
-  /* modal */
-  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;padding:24px;overflow:auto}
-  .modal.active{display:flex;align-items:center;justify-content:center}
-  .modal-content{background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:90vh;overflow:auto;animation:modalAppear 0.25s ease-out}
-  @keyframes modalAppear{from{opacity:0;transform:scale(0.98)}to{opacity:1;transform:scale(1)}}
-  .modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee}
-  .modal-body{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:16px}
-  .modal-image img{width:100%;border-radius:8px}
-  .modal-details h3{color:var(--color-primary)}
-  .modal-price{color:var(--color-secondary);font-weight:800;font-size:20px;margin-bottom:12px}
-  .size-options{display:flex;gap:8px;flex-wrap:wrap}
-  .size-btn{padding:8px 12px;border-radius:8px;background:var(--color-light-gray);border:2px solid transparent;cursor:pointer;font-weight:700}
-  .size-btn:hover{background:var(--color-primary);color:#fff}
-  .size-btn.selected{background:var(--color-primary);color:#fff;border-color:var(--color-primary-light)}
-  .size-btn.disabled{opacity:0.45;pointer-events:none;background:#f4f4f4;color:#999}
-  .modal-close{background:none;border:none;font-size:24px;cursor:pointer;padding:8px;border-radius:50%}
-  .footer{background:var(--color-primary);color:#fff;text-align:center;padding:24px;margin-top:24px}
-
-  /* loading */
-  .loading{display:flex;justify-content:center;align-items:center;padding:48px;color:var(--color-gray)}
-  .spinner{width:32px;height:32px;border:3px solid #f3f3f3;border-top:3px solid var(--color-primary);border-radius:50%;animation:spin 1s linear infinite}
-  @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-
-  /* admin */
-  .admin-form{display:grid;gap:16px;max-height:400px;overflow-y:auto}
-  .admin-product{padding:16px;border:1px solid #eee;border-radius:8px;margin-bottom:16px}
-  .admin-sizes{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px}
-  .admin-size{display:flex;flex-direction:column;gap:4px}
-  .admin-size label{font-weight:600;color:var(--color-primary)}
-  .admin-size input{padding:8px;border:1px solid #ddd;border-radius:4px}
-
-  /* notification */
-  .notification{position:fixed;top:20px;right:20px;background:var(--color-primary);color:white;padding:12px 20px;border-radius:8px;z-index:1001;transform:translateX(100%);transition:var(--transition)}
-  .notification.show{transform:translateX(0)}
-  .notification.success{background:#28a745}
-  .notification.error{background:#dc3545}
-
-  /* responsive */
-  @media (max-width:900px){
-    .hero-content{grid-template-columns:1fr}
-    .modal-body{grid-template-columns:1fr}
-    .products-grid{grid-template-columns:1fr}
-    .search-filters{flex-direction:column;gap:8px}
-    .search-input{width:100%}
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShoesStore - Elegancia en Cada Paso</title>
+    <meta name="description" content="Descubre nuestra colección exclusiva de zapatos de las mejores marcas. Calidad, estilo y comodidad en cada paso.">
+    <meta name="keywords" content="zapatos, calzado, moda, elegancia, marcas">
+    <meta name="author" content="ShoesStore">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Preconnect para performance -->
+    <link rel="preconnect" href="https://images.unsplash.com">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- NOTIFICATION -->
-  <div id="notification" class="notification"></div>
+    <!-- NOTIFICATION -->
+    <div id="notification" class="notification" role="alert" aria-live="polite"></div>
 
-  <!-- HEADER -->
-  <header class="header" role="banner">
-    <div class="container">
-      <div class="header-content">
-        <a href="#" class="logo" aria-label="Ir al inicio">ShoesStore</a>
-        <div class="search-filters" role="search">
-          <div class="connection-status">
-            <div id="connectionDot" class="connection-dot"></div>
-            <span id="connectionText">Conectado</span>
-          </div>
-          <div class="search-box">
-            <label for="searchInput" class="visually-hidden">Buscar productos</label>
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar zapatos...">
-          </div>
-          <div>
-            <label for="brandFilter" class="visually-hidden">Filtrar por marca</label>
-            <select id="brandFilter" class="filter-select">
-              <option value="">Todas las marcas</option>
-            </select>
-          </div>
-          <button id="showAllBtn" class="btn btn-outline">Ver Colección</button>
+    <!-- HEADER -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo" aria-label="ShoesStore - Ir al inicio">
+                    <span class="logo-icon">👟</span>
+                    ShoesStore
+                </a>
+                
+                <nav class="search-filters" role="search" aria-label="Filtros de búsqueda">
+                    <div class="connection-status" aria-live="polite">
+                        <div id="connectionDot" class="connection-dot" aria-hidden="true"></div>
+                        <span id="connectionText">Conectando...</span>
+                    </div>
+                    
+                    <div class="search-box">
+                        <label for="searchInput" class="visually-hidden">Buscar productos</label>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Buscar zapatos..."
+                            autocomplete="off"
+                            aria-describedby="search-help"
+                        >
+                        <div id="search-help" class="visually-hidden">
+                            Busca por nombre de producto o marca
+                        </div>
+                    </div>
+                    
+                    <div class="filter-box">
+                        <label for="brandFilter" class="visually-hidden">Filtrar por marca</label>
+                        <select id="brandFilter" class="filter-select" aria-describedby="filter-help">
+                            <option value="">Todas las marcas</option>
+                        </select>
+                        <div id="filter-help" class="visually-hidden">
+                            Filtra productos por marca específica
+                        </div>
+                    </div>
+                    
+                    <button 
+                        id="showAllBtn" 
+                        class="btn btn-outline" 
+                        type="button"
+                        aria-label="Mostrar todos los productos"
+                    >
+                        <span class="btn-icon" aria-hidden="true">🔍</span>
+                        Ver Todo
+                    </button>
+                </nav>
+            </div>
         </div>
-      </div>
-    </div>
-  </header>
+    </header>
 
-  <!-- HERO -->
-  <section class="hero" role="banner">
-    <div class="container">
-      <div class="hero-content">
-        <div class="hero-text">
-          <h1>Elegancia en Cada Paso</h1>
-          <p>Descubre nuestra colección exclusiva de zapatos de las mejores marcas.</p>
-          <a href="#products" class="btn btn-secondary">Ver Catálogo</a>
+    <!-- HERO SECTION -->
+    <section class="hero" role="banner">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Elegancia en Cada Paso</h1>
+                    <p>Descubre nuestra colección exclusiva de zapatos de las mejores marcas. Calidad, estilo y comodidad que transforman tu caminar en una experiencia única.</p>
+                    <div class="hero-actions">
+                        <a href="#products" class="btn btn-secondary" aria-describedby="catalog-help">
+                            <span class="btn-icon" aria-hidden="true">👟</span>
+                            Ver Catálogo
+                        </a>
+                        <div id="catalog-help" class="visually-hidden">
+                            Ir a la sección de productos
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img 
+                        src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=900&h=600&fit=crop&crop=center" 
+                        alt="Zapatos elegantes de alta calidad en exhibición"
+                        loading="eager"
+                        decoding="async"
+                    >
+                </div>
+            </div>
         </div>
-        <div class="hero-image">
-          <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=900&h=600&fit=crop&crop=center" alt="Zapatos elegantes de alta calidad">
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PRODUCTS -->
-  <main id="products" class="products-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Nuestra Colección</h2>
-        <p>Encuentra el calzado perfecto para tu estilo</p>
-      </div>
-      
-      <div id="loadingIndicator" class="loading">
-        <div class="spinner"></div>
-        <span style="margin-left:12px">Cargando productos...</span>
-      </div>
-
-      <div id="productsGrid" class="products-grid" role="grid" aria-label="Catálogo de productos" style="display:none"></div>
-
-      <div id="noResults" class="no-results" style="display:none;text-align:center;padding:24px;color:var(--color-gray)">
-        <h3>No se encontraron productos</h3>
-        <p>Intenta con otros términos de búsqueda o selecciona una marca diferente.</p>
-      </div>
-    </div>
-  </main>
-
-  <!-- MODAL PRODUCTO -->
-  <div id="productModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="modal-content" role="document">
-      <div class="modal-header">
-        <h2 id="modalTitle">Título</h2>
-        <button id="modalCloseBtn" class="modal-close" aria-label="Cerrar modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-image">
-          <img id="modalImage" src="" alt="">
-        </div>
-        <div class="modal-details">
-          <h3 id="modalProductTitle"></h3>
-          <p id="modalBrand" class="modal-brand"></p>
-          <div id="modalPrice" class="modal-price"></div>
-
-          <div class="size-selector">
-            <h4>Selecciona tu talla:</h4>
-            <div id="modalSizes" class="size-options" role="radiogroup"></div>
-          </div>
-
-          <button id="buyBtn" class="btn btn-secondary" type="button" disabled aria-describedby="buy-help">Comprar por WhatsApp</button>
-          <div id="buy-help" class="visually-hidden">Selecciona una talla para habilitar la compra</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL ADMIN -->
-  <div id="adminModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Administrar Stock</h2>
-        <button id="adminClose" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="adminForm" class="admin-form"></div>
-      </div>
-      <div style="padding:16px;display:flex;gap:12px;">
-        <button id="saveStock" class="btn btn-primary">Guardar Cambios</button>
-        <button id="cancelAdmin" class="btn btn-outline">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <footer class="footer">
-    <div class="container">
-      <p>&copy; 2025 ShoesStore. Todos los derechos reservados.</p>
-    </div>
-  </footer>
-
-  <!-- Socket.IO Client -->
-   <script src="/socket.io/socket.io.js"></script>
-
-
-
-  <script>
-/* =========================
-   CONFIGURACIÓN Y VARIABLES GLOBALES
-   ========================= */
-
-// Configuración de la aplicación
-const CONFIG = {
-  API_BASE: window.location.origin,
-  WHATSAPP_NUMBER: "51960086136", // Se actualizará desde el servidor
-  ADMIN_PASSWORD: "Daniela1809"
-};
-
-// Variables globales
-let currentProducts = [];
-let filteredProducts = [];
-let currentProduct = null;
-let selectedSize = null;
-let socket = null;
-
-// Estado de conexión
-let isConnected = false;
-
-/* =========================
-   INICIALIZACIÓN
-   ========================= */
-document.addEventListener('DOMContentLoaded', () => {
-  initializeApp();
-});
-
-async function initializeApp() {
-  setupEventListeners();
-  initializeSocket();
-  await loadProducts();
-  setupLazyLoading();
-}
-
-/* =========================
-   CONEXIÓN SOCKET.IO
-   ========================= */
-function initializeSocket() {
-  socket = io();
-  
-  socket.on('connect', () => {
-    isConnected = true;
-    updateConnectionStatus();
-    showNotification('Conectado al servidor', 'success');
-  });
-
-  socket.on('disconnect', () => {
-    isConnected = false;
-    updateConnectionStatus();
-    showNotification('Conexión perdida', 'error');
-  });
-
-  socket.on('stock_updated', (products) => {
-    currentProducts = products;
-    handleStockUpdate();
-    showNotification('Stock actualizado', 'success');
-  });
-
-  socket.on('products_updated', (products) => {
-    currentProducts = products;
-    renderProducts(currentProducts);
-    populateBrandFilter();
-    showNotification('Catálogo actualizado', 'success');
-  });
-}
-
-function updateConnectionStatus() {
-  const dot = document.getElementById('connectionDot');
-  const text = document.getElementById('connectionText');
-  
-  if (isConnected) {
-    dot.classList.remove('disconnected');
-    text.textContent = 'Conectado';
-  } else {
-    dot.classList.add('disconnected');
-    text.textContent = 'Desconectado';
-  }
-}
-
-/* =========================
-   API CALLS
-   ========================= */
-async function loadProducts() {
-  try {
-    const response = await fetch(`${CONFIG.API_BASE}/api/products`);
-    if (!response.ok) throw new Error('Error cargando productos');
-    
-    const products = await response.json();
-    currentProducts = products;
-    
-    document.getElementById('loadingIndicator').style.display = 'none';
-    document.getElementById('productsGrid').style.display = 'grid';
-    
-    renderProducts(products);
-    populateBrandFilter();
-    
-  } catch (error) {
-    console.error('Error cargando productos:', error);
-    showNotification('Error cargando productos', 'error');
-    document.getElementById('loadingIndicator').innerHTML = 
-      '<p style="color:var(--color-secondary)">Error cargando productos. Por favor, recarga la página.</p>';
-  }
-}
-
-async function updateStock(updates) {
-  try {
-    const response = await fetch(`${CONFIG.API_BASE}/api/admin/stock`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        password: CONFIG.ADMIN_PASSWORD,
-        updates
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Error actualizando stock');
-    }
-
-    const result = await response.json();
-    return result;
-
-  } catch (error) {
-    console.error('Error actualizando stock:', error);
-    throw error;
-  }
-}
-
-/* =========================
-   EVENT LISTENERS
-   ========================= */
-function setupEventListeners() {
-  // Búsqueda y filtros
-  document.getElementById('searchInput').addEventListener('input', debounce(handleSearch, 300));
-  document.getElementById('brandFilter').addEventListener('change', handleBrandFilter);
-  document.getElementById('showAllBtn').addEventListener('click', showAllProducts);
-
-  // Modal producto
-  const productModal = document.getElementById('productModal');
-  document.getElementById('modalCloseBtn').addEventListener('click', closeProductModal);
-  productModal.addEventListener('click', (e) => {
-    if (e.target === productModal) closeProductModal();
-  });
-  document.getElementById('buyBtn').addEventListener('click', handleBuyClick);
-
-  // Modal admin
-  const adminModal = document.getElementById('adminModal');
-  document.getElementById('adminClose').addEventListener('click', closeAdminModal);
-  document.getElementById('saveStock').addEventListener('click', handleSaveStock);
-  document.getElementById('cancelAdmin').addEventListener('click', closeAdminModal);
-  adminModal.addEventListener('click', (e) => {
-    if (e.target === adminModal) closeAdminModal();
-  });
-
-  // Atajos de teclado
-  document.addEventListener('keydown', handleKeyDown);
-}
-
-function handleKeyDown(e) {
-  // Cerrar modales con Escape
-  if (e.key === 'Escape') {
-    if (document.getElementById('productModal').classList.contains('active')) {
-      closeProductModal();
-    }
-    if (document.getElementById('adminModal').classList.contains('active')) {
-      closeAdminModal();
-    }
-  }
-
-  // Abrir panel admin con Shift + A
-  if (e.shiftKey && e.key === 'A') {
-    e.preventDefault();
-    openAdminPanel();
-  }
-}
-
-/* =========================
-   RENDER PRODUCTOS
-   ========================= */
-function renderProducts(products) {
-  const grid = document.getElementById('productsGrid');
-  const noResults = document.getElementById('noResults');
-  
-  grid.innerHTML = '';
-  
-  if (!products.length) {
-    noResults.style.display = 'block';
-    grid.style.display = 'none';
-    return;
-  }
-  
-  noResults.style.display = 'none';
-  grid.style.display = 'grid';
-  
-  products.forEach(product => {
-    grid.appendChild(createProductCard(product));
-  });
-  
-  filteredProducts = products;
-}
-
-function createProductCard(product) {
-  const card = document.createElement('article');
-  card.className = 'product-card';
-  card.tabIndex = 0;
-  card.setAttribute('role', 'gridcell');
-  card.setAttribute('aria-label', `${product.title} - ${product.brand} - ${formatPrice(product.price)}`);
-
-  // Verificar si todas las tallas están agotadas
-  const allOut = product.sizes.every(size => size.stock === 0);
-
-  // Generar HTML de tallas
-  const sizesHtml = product.sizes.map(size => {
-    if (size.stock === 0) {
-      return `<span class="size-tag out" aria-disabled="true">${size.size}<span class="size-x">✕</span></span>`;
-    } else {
-      return `<span class="size-tag" data-size="${size.size}">${size.size}</span>`;
-    }
-  }).join('');
-
-  card.innerHTML = `
-    <div class="product-image">
-      <img class="lazy-image" data-src="${product.image_url}" alt="${product.title} - ${product.brand}">
-    </div>
-    <div class="product-info">
-      <h3 class="product-title">${product.title}</h3>
-      <p class="product-brand">${product.brand}</p>
-      <div class="product-price">${formatPrice(product.price)}</div>
-      <div class="product-sizes">${sizesHtml}</div>
-      ${allOut ? 
-        '<div class="no-stock-label">Agotado por tallas</div>' : 
-        `<button class="btn btn-primary" aria-label="Ver detalles">Ver Detalles</button>`
-      }
-    </div>
-  `;
-
-  // Event listeners para la card
-  if (!allOut) {
-    card.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('size-tag') || !e.target.classList.contains('out')) {
-        openProductModal(product.id);
-      }
-    });
-    
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openProductModal(product.id);
-      }
-    });
-  }
-
-  return card;
-}
-
-/* =========================
-   BÚSQUEDA Y FILTROS
-   ========================= */
-function handleSearch(e) {
-  const query = e.target.value.toLowerCase().trim();
-  const brand = document.getElementById('brandFilter').value;
-  filterProducts(query, brand);
-}
-
-function handleBrandFilter(e) {
-  const brand = e.target.value;
-  const query = document.getElementById('searchInput').value.toLowerCase().trim();
-  filterProducts(query, brand);
-}
-
-function filterProducts(query, brand) {
-  const filtered = currentProducts.filter(product => {
-    const matchQuery = !query || 
-      product.title.toLowerCase().includes(query) || 
-      product.brand.toLowerCase().includes(query);
-    const matchBrand = !brand || product.brand === brand;
-    return matchQuery && matchBrand;
-  });
-  
-  renderProducts(filtered);
-}
-
-function populateBrandFilter() {
-  const select = document.getElementById('brandFilter');
-  const currentValue = select.value;
-  
-  // Limpiar opciones existentes (excepto "Todas las marcas")
-  select.innerHTML = '<option value="">Todas las marcas</option>';
-  
-  // Obtener marcas únicas y ordenarlas
-  const brands = [...new Set(currentProducts.map(product => product.brand))].sort();
-  
-  brands.forEach(brand => {
-    const option = document.createElement('option');
-    option.value = brand;
-    option.textContent = brand;
-    select.appendChild(option);
-  });
-  
-  // Restaurar selección anterior si existe
-  if (currentValue && brands.includes(currentValue)) {
-    select.value = currentValue;
-  }
-}
-
-function showAllProducts() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('brandFilter').value = '';
-  renderProducts(currentProducts);
-}
-
-/* =========================
-   MODAL PRODUCTO
-   ========================= */
-function openProductModal(productId) {
-  const product = currentProducts.find(p => p.id === productId);
-  if (!product) return;
-
-  currentProduct = product;
-  selectedSize = null;
-
-  // Llenar información del modal
-  document.getElementById('modalTitle').textContent = product.title;
-  document.getElementById('modalProductTitle').textContent = product.title;
-  document.getElementById('modalBrand').textContent = product.brand;
-  document.getElementById('modalPrice').textContent = formatPrice(product.price);
-
-  const modalImage = document.getElementById('modalImage');
-  modalImage.src = product.image_url;
-  modalImage.alt = `${product.title} - ${product.brand}`;
-
-  renderSizeSelector(product.sizes);
-
-  // Mostrar modal
-  const modal = document.getElementById('productModal');
-  modal.classList.add('active');
-  modal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  document.getElementById('modalCloseBtn').focus();
-}
-
-function closeProductModal() {
-  const modal = document.getElementById('productModal');
-  modal.classList.remove('active');
-  modal.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-  
-  // Limpiar estado
-  selectedSize = null;
-  currentProduct = null;
-  document.getElementById('modalSizes').innerHTML = '';
-  updateBuyButton();
-}
-
-function renderSizeSelector(sizes) {
-  const container = document.getElementById('modalSizes');
-  container.innerHTML = '';
-
-  sizes.forEach(size => {
-    const button = document.createElement('button');
-    button.className = 'size-btn' + (size.stock === 0 ? ' disabled' : '');
-    button.type = 'button';
-    button.textContent = size.size + (size.stock === 0 ? ' • Agotado' : '');
-    button.setAttribute('aria-label', `Talla ${size.size} ${size.stock === 0 ? 'agotada' : 'disponible'}`);
-
-    if (size.stock === 0) {
-      button.disabled = true;
-      button.setAttribute('aria-disabled', 'true');
-      button.title = 'Agotado';
-    } else {
-      button.addEventListener('click', () => selectSize(size.size, button));
-      button.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          selectSize(size.size, button);
-        }
-      });
-    }
-
-    container.appendChild(button);
-  });
-
-  updateBuyButton();
-}
-
-function selectSize(size, button) {
-  if (!button || button.disabled) return;
-
-  selectedSize = size;
-  
-  // Actualizar UI
-  document.querySelectorAll('#modalSizes .size-btn').forEach(btn => {
-    btn.classList.remove('selected');
-  });
-  button.classList.add('selected');
-  
-  updateBuyButton();
-}
-
-function updateBuyButton() {
-  const buyBtn = document.getElementById('buyBtn');
-  
-  if (currentProduct && selectedSize) {
-    const sizeObj = currentProduct.sizes.find(s => s.size === selectedSize);
-    if (sizeObj && sizeObj.stock > 0) {
-      buyBtn.disabled = false;
-      buyBtn.removeAttribute('aria-disabled');
-      return;
-    }
-  }
-  
-  buyBtn.disabled = true;
-  buyBtn.setAttribute('aria-disabled', 'true');
-}
-
-/* =========================
-   COMPRA POR WHATSAPP
-   ========================= */
-function handleBuyClick() {
-  if (!currentProduct || !selectedSize) return;
-
-  const message = encodeURIComponent(
-    `¡Hola! Me interesa comprar:\n\n` +
-    `📦 Producto: ${currentProduct.title}\n` +
-    `🏷️ Marca: ${currentProduct.brand}\n` +
-    `📏 Talla: ${selectedSize}\n` +
-    `💰 Precio: ${formatPrice(currentProduct.price)}`
-  );
-
-  const url = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${message}`;
-  window.open(url, '_blank', 'noopener,noreferrer');
-  
-  // Cerrar modal después de un momento
-  setTimeout(closeProductModal, 500);
-}
-
-/* =========================
-   PANEL ADMINISTRADOR
-   ========================= */
-function openAdminPanel() {
-  const password = prompt("Ingresa la contraseña de administrador:");
-  if (password !== CONFIG.ADMIN_PASSWORD) {
-    if (password !== null) {
-      showNotification('Contraseña incorrecta', 'error');
-    }
-    return;
-  }
-
-  renderAdminPanel();
-  
-  const modal = document.getElementById('adminModal');
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function renderAdminPanel() {
-  const form = document.getElementById('adminForm');
-  form.innerHTML = '';
-
-  currentProducts.forEach(product => {
-    const productDiv = document.createElement('div');
-    productDiv.className = 'admin-product';
-    
-    productDiv.innerHTML = `
-      <h3>${product.title}</h3>
-      <p style="color:var(--color-gray);margin-bottom:12px">${product.brand}</p>
-      <div class="admin-sizes">
-        ${product.sizes.map(size => `
-          <div class="admin-size">
-            <label for="stock_${product.id}_${size.size}">Talla ${size.size}</label>
-            <input 
-              type="number" 
-              id="stock_${product.id}_${size.size}"
-              min="0" 
-              max="999"
-              value="${size.stock}"
-              data-product-id="${product.id}"
-              data-size="${size.size}"
+    </section>
+
+    <!-- PRODUCTS SECTION -->
+    <main id="products" class="products-section">
+        <div class="container">
+            <header class="section-header">
+                <h2>Nuestra Colección</h2>
+                <p>Encuentra el calzado perfecto para tu estilo y personalidad</p>
+            </header>
+            
+            <!-- Loading State -->
+            <div id="loadingIndicator" class="loading" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <span>Cargando productos...</span>
+            </div>
+
+            <!-- Products Grid -->
+            <div 
+                id="productsGrid" 
+                class="products-grid" 
+                role="grid" 
+                aria-label="Catálogo de productos"
+                style="display:none"
+            ></div>
+
+            <!-- No Results State -->
+            <div 
+                id="noResults" 
+                class="no-results" 
+                style="display:none"
+                role="status"
+                aria-live="polite"
             >
-          </div>
-        `).join('')}
-      </div>
-    `;
+                <div class="no-results-icon" aria-hidden="true">😔</div>
+                <h3>No se encontraron productos</h3>
+                <p>Intenta con otros términos de búsqueda o selecciona una marca diferente.</p>
+                <button 
+                    id="clearFiltersBtn" 
+                    class="btn btn-outline"
+                    type="button"
+                >
+                    Limpiar filtros
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- PRODUCT MODAL -->
+    <div 
+        id="productModal" 
+        class="modal" 
+        role="dialog" 
+        aria-modal="true" 
+        aria-hidden="true"
+        aria-labelledby="modalTitle"
+    >
+        <div class="modal-content" role="document">
+            <header class="modal-header">
+                <h2 id="modalTitle">Detalles del Producto</h2>
+                <button 
+                    id="modalCloseBtn" 
+                    class="modal-close" 
+                    type="button"
+                    aria-label="Cerrar ventana de detalles"
+                >
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </header>
+            
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img 
+                        id="modalImage" 
+                        src="" 
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </div>
+                
+                <div class="modal-details">
+                    <h3 id="modalProductTitle"></h3>
+                    <p id="modalBrand" class="modal-brand"></p>
+                    <div id="modalPrice" class="modal-price"></div>
+
+                    <div class="size-selector">
+                        <h4>Selecciona tu talla:</h4>
+                        <div 
+                            id="modalSizes" 
+                            class="size-options" 
+                            role="radiogroup"
+                            aria-label="Seleccionar talla"
+                        ></div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button 
+                            id="buyBtn" 
+                            class="btn btn-secondary" 
+                            type="button" 
+                            disabled 
+                            aria-describedby="buy-help"
+                        >
+                            <span class="btn-icon" aria-hidden="true">💬</span>
+                            Comprar por WhatsApp
+                        </button>
+                        <div id="buy-help" class="visually-hidden">
+                            Selecciona una talla para habilitar la compra
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
+    <div 
+        id="adminModal" 
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="adminTitle"
+    >
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="adminTitle">Panel de Administración</h2>
+                <button 
+                    id="adminClose" 
+                    class="modal-close" 
+                    type="button"
+                    aria-label="Cerrar panel de administración"
+                >
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </header>
+            
+            <div class="modal-body">
+                <div id="adminForm" class="admin-form" role="form"></div>
+            </div>
+            
+            <footer class="modal-footer">
+                <button 
+                    id="saveStock" 
+                    class="btn btn-primary" 
+                    type="button"
+                >
+                    <span class="btn-icon" aria-hidden="true">💾</span>
+                    Guardar Cambios
+                </button>
+                <button 
+                    id="cancelAdmin" 
+                    class="btn btn-outline" 
+                    type="button"
+                >
+                    Cancelar
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>ShoesStore</h3>
+                    <p>Elegancia en cada paso desde 2025</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#" aria-label="Contactar por WhatsApp">
+                        <span aria-hidden="true">💬</span> WhatsApp
+                    </a>
+                    <a href="#" aria-label="Seguir en Instagram">
+                        <span aria-hidden="true">📸</span> Instagram
+                    </a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 ShoesStore. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
     
-    form.appendChild(productDiv);
-  });
-}
-
-async function handleSaveStock() {
-  try {
-    const inputs = document.querySelectorAll('#adminForm input[type="number"]');
-    const updates = Array.from(inputs).map(input => ({
-      productId: parseInt(input.dataset.productId),
-      size: input.dataset.size,
-      stock: parseInt(input.value) || 0
-    }));
-
-    showNotification('Actualizando stock...', 'info');
-    
-    await updateStock(updates);
-    
-    closeAdminModal();
-    showNotification('Stock actualizado correctamente', 'success');
-
-  } catch (error) {
-    console.error('Error guardando stock:', error);
-    showNotification(error.message || 'Error actualizando stock', 'error');
-  }
-}
-
-function closeAdminModal() {
-  const modal = document.getElementById('adminModal');
-  modal.classList.remove('active');
-  document.body.style.overflow = '';
-}
-
-/* =========================
-   ACTUALIZACIÓN EN TIEMPO REAL
-   ========================= */
-function handleStockUpdate() {
-  // Re-renderizar productos si es necesario
-  const currentQuery = document.getElementById('searchInput').value.toLowerCase().trim();
-  const currentBrand = document.getElementById('brandFilter').value;
-  
-  if (!currentQuery && !currentBrand) {
-    renderProducts(currentProducts);
-  } else {
-    filterProducts(currentQuery, currentBrand);
-  }
-
-  // Actualizar modal si está abierto
-  if (currentProduct && document.getElementById('productModal').classList.contains('active')) {
-    const updatedProduct = currentProducts.find(p => p.id === currentProduct.id);
-    if (updatedProduct) {
-      currentProduct = updatedProduct;
-      renderSizeSelector(updatedProduct.sizes);
-    }
-  }
-}
-
-/* =========================
-   NOTIFICACIONES
-   ========================= */
-function showNotification(message, type = 'info') {
-  const notification = document.getElementById('notification');
-  notification.textContent = message;
-  notification.className = `notification ${type}`;
-  notification.classList.add('show');
-  
-  setTimeout(() => {
-    notification.classList.remove('show');
-  }, 3000);
-}
-
-/* =========================
-   LAZY LOADING
-   ========================= */
-function setupLazyLoading() {
-  if ('IntersectionObserver' in window) {
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          img.src = img.dataset.src;
-          img.classList.remove('lazy-image');
-          observer.unobserve(img);
+    <!-- Service Worker para PWA (opcional) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .catch(err => console.log('SW registration failed'));
+            });
         }
-      });
-    }, {
-      rootMargin: '200px'
-    });
-
-    // Observar imágenes existentes
-    document.querySelectorAll('.lazy-image').forEach(img => {
-      imageObserver.observe(img);
-    });
-
-    // Observar nuevas imágenes agregadas dinámicamente
-    const gridObserver = new MutationObserver(() => {
-      document.querySelectorAll('.lazy-image:not([src])').forEach(img => {
-        imageObserver.observe(img);
-      });
-    });
-
-    gridObserver.observe(document.getElementById('productsGrid'), {
-      childList: true,
-      subtree: true
-    });
-
-  } else {
-    // Fallback para navegadores sin IntersectionObserver
-    document.querySelectorAll('.lazy-image').forEach(img => {
-      img.src = img.dataset.src;
-    });
-  }
-}
-
-/* =========================
-   UTILIDADES
-   ========================= */
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN'
-  }).format(price);
-}
-
-// Prevenir errores de consola en producción
-window.addEventListener('error', (e) => {
-  console.error('Error capturado:', e.error);
-});
-
-</script>
+    </script>
 </body>
 </html>

@@ -107,8 +107,8 @@ async function insertInitialData() {
     const products = [
       {
         title: "Zapato Boni urbanos color negro",
-        brand: "Elegance",
-        price: 299.99,
+        brand: "Boni",
+        price: 74.99,
         image_url: "/imagenes/imagen1.jpeg",
         sizes: [
           { size: "38", stock: 2 },
@@ -119,9 +119,9 @@ async function insertInitialData() {
         ]
       },
       {
-        title: "Sneakers Deportivos Premium",
-        brand: "SportMax",
-        price: 159.99,
+        title: "Zapato Boni urbanos color negro",
+        brand: "Boni",
+        price: 74.99,
         image_url: "/imagenes/imagen2.jpeg",
         sizes: [
           { size: "36", stock: 3 },
@@ -132,9 +132,9 @@ async function insertInitialData() {
         ]
       },
       {
-        title: "Botas de Cuero Artesanales",
-        brand: "CraftMaster",
-        price: 449.99,
+        title: "Zapato Boni urbanos color negro",
+        brand: "Boni",
+        price: 74.99,
         image_url: "/imagenes/imagen3.jpeg",
         sizes: [
           { size: "39", stock: 0 },
