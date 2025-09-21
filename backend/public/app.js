@@ -35,6 +35,144 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
+
+// ============================================================
+// AGREGAR AQUÍ EL CÓDIGO DEL MENÚ MÓVIL (DESPUÉS DE ESTA LÍNEA)
+// ============================================================
+
+/* =========================
+   MENÚ MÓVIL HAMBURGUESA
+   ========================= */
+
+// Función para manejar el menú móvil
+function initMobileMenu() {
+    // Crear el botón hamburguesa
+    const mobileMenuBtn = document.createElement('button');
+    mobileMenuBtn.className = 'mobile-menu-btn';
+    mobileMenuBtn.innerHTML = '☰';
+    mobileMenuBtn.setAttribute('aria-label', 'Abrir menú de filtros');
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    
+    // Crear overlay para cerrar menú
+    const overlay = document.createElement('div');
+    overlay.className = 'mobile-overlay';
+    
+    // Insertar el botón en el header
+    const headerContent = document.querySelector('.header-content');
+    const searchFilters = document.querySelector('.search-filters');
+    
+    if (headerContent && searchFilters) {
+        headerContent.insertBefore(mobileMenuBtn, searchFilters);
+        document.body.appendChild(overlay);
+        
+        let isMenuOpen = false;
+        
+        // Función para alternar menú
+        function toggleMenu() {
+            isMenuOpen = !isMenuOpen;
+            
+            searchFilters.classList.toggle('active', isMenuOpen);
+            overlay.classList.toggle('active', isMenuOpen);
+            mobileMenuBtn.classList.toggle('active', isMenuOpen);
+            
+            // Cambiar ícono
+            mobileMenuBtn.innerHTML = isMenuOpen ? '✕' : '☰';
+            mobileMenuBtn.setAttribute('aria-expanded', isMenuOpen);
+            mobileMenuBtn.setAttribute('aria-label', 
+                isMenuOpen ? 'Cerrar menú de filtros' : 'Abrir menú de filtros'
+            );
+            
+            // Prevenir scroll del body cuando el menú está abierto
+            document.body.style.overflow = isMenuOpen ? 'hidden' : '';
+        }
+        
+        // Función para cerrar menú
+        function closeMenu() {
+            if (isMenuOpen) {
+                toggleMenu();
+            }
+        }
+        
+        // Event listeners
+        mobileMenuBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', closeMenu);
+        
+        // Cerrar menú con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isMenuOpen) {
+                closeMenu();
+            }
+        });
+        
+        // Cerrar menú cuando cambie el tamaño de pantalla
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && isMenuOpen) {
+                closeMenu();
+            }
+        });
+        
+        // Cerrar menú después de hacer una búsqueda/filtro
+        setTimeout(() => {
+            const searchInput = document.getElementById('searchInput');
+            const brandFilter = document.getElementById('brandFilter');
+            const showAllBtn = document.getElementById('showAllBtn');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    setTimeout(closeMenu, 500);
+                });
+            }
+            
+            if (brandFilter) {
+                brandFilter.addEventListener('change', closeMenu);
+            }
+            
+            if (showAllBtn) {
+                showAllBtn.addEventListener('click', closeMenu);
+            }
+        }, 1000); // Esperar a que se carguen los elementos
+    }
+}
+
+// Función auxiliar para detectar móvil
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+// Función para ajustar comportamiento según dispositivo
+function adjustForDevice() {
+    const header = document.querySelector('.header');
+    if (header && isMobile()) {
+        header.style.setProperty('--header-padding', '8px 0');
+    }
+}
+
+// ============================================================
+// FIN DEL CÓDIGO DEL MENÚ MÓVIL
+// ============================================================
+
+async function initializeApp() {
+    try {
+        showLoadingState();
+        setupEventListeners();
+        initializeSocket();
+        await loadProducts();
+        setupLazyLoading();
+        setupAccessibility();
+        initMobileMenu(); // Inicializar menú móvil
+        adjustForDevice(); // Ajustar para dispositivo
+        // AGREGAR ESTA LÍNEA TAMBIÉN:
+        initMobileMenu(); // Inicializar menú móvil
+        adjustForDevice(); // Ajustar para dispositivo
+        
+        hideLoadingState();
+        
+        Logger.info('Aplicación inicializada correctamente');
+    } catch (error) {
+        Logger.error('Error inicializando aplicación:', error);
+        showNotification('Error inicializando la aplicación', 'error');
+    }
+}
 async function initializeApp() {
     try {
         showLoadingState();

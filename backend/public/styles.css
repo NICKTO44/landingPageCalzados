@@ -223,7 +223,8 @@ button {
 }
 
 /* =========================
-   HEADER
+   HEADER RESPONSIVE MEJORADO
+   Reemplaza la sección HEADER en tu styles.css
    ========================= */
 
 .header {
@@ -233,6 +234,7 @@ button {
     top: 0;
     z-index: var(--z-sticky);
     backdrop-filter: blur(10px);
+    transition: var(--transition-base);
 }
 
 .header-content {
@@ -281,6 +283,34 @@ button {
     min-width: 0;
 }
 
+/* Menu hamburguesa - solo visible en móviles */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: var(--font-size-2xl);
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    transition: var(--transition-base);
+    min-height: 44px;
+    min-width: 44px;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--color-light-gray);
+    transform: scale(1.1);
+}
+
+.mobile-menu-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Filtros principales */
 .search-box,
 .filter-box {
     position: relative;
@@ -350,6 +380,175 @@ button {
     0% { opacity: 1; }
     50% { opacity: 0.6; }
     100% { opacity: 1; }
+}
+
+/* =========================
+   RESPONSIVE MOBILE FIRST
+   ========================= */
+
+/* Tablets pequeñas y móviles grandes */
+@media (max-width: 768px) {
+    .header {
+        /* Header más compacto en móviles */
+        padding: 0;
+    }
+    
+    .header-content {
+        padding: var(--spacing-md) 0;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+    }
+
+    .logo {
+        font-size: var(--font-size-xl);
+        flex-shrink: 0;
+    }
+
+    .logo-icon {
+        font-size: var(--font-size-2xl);
+    }
+
+    /* Mostrar solo el botón hamburguesa en móviles */
+    .mobile-menu-btn {
+        display: flex;
+    }
+
+    /* Ocultar los filtros principales en móviles */
+    .search-filters {
+        position: fixed;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--color-white);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        padding: var(--spacing-lg);
+        gap: var(--spacing-md);
+        box-shadow: var(--shadow-lg);
+        border-top: 1px solid #eee;
+        transform: translateY(0);
+        transition: transform 0.3s ease-in-out;
+        z-index: var(--z-dropdown);
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+    }
+
+    /* Cuando el menú está activo */
+    .search-filters.active {
+        transform: translateY(-100%);
+    }
+
+    .search-input,
+    .filter-select {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .connection-status {
+        order: -1;
+        align-self: center;
+        margin-bottom: var(--spacing-sm);
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+    .header-content {
+        padding: var(--spacing-sm) 0;
+    }
+
+    .logo {
+        font-size: var(--font-size-lg);
+    }
+
+    .logo-icon {
+        font-size: var(--font-size-xl);
+    }
+
+    .mobile-menu-btn {
+        font-size: var(--font-size-xl);
+        padding: var(--spacing-xs);
+        min-height: 40px;
+        min-width: 40px;
+    }
+
+    .search-filters {
+        padding: var(--spacing-md);
+        gap: var(--spacing-sm);
+    }
+}
+
+/* Desktop - mantener comportamiento original */
+@media (min-width: 769px) {
+    .mobile-menu-btn {
+        display: none !important;
+    }
+    
+    .search-filters {
+        position: static !important;
+        transform: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+    }
+}
+
+/* =========================
+   ANIMACIONES PARA EL MENÚ
+   ========================= */
+
+/* Overlay para cerrar el menú tocando fuera */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: calc(var(--z-dropdown) - 1);
+    backdrop-filter: blur(2px);
+}
+
+.mobile-overlay.active {
+    display: block;
+}
+
+/* Animación del ícono hamburguesa */
+.mobile-menu-btn.active {
+    transform: rotate(90deg);
+}
+
+/* Mejora de la animación de entrada del menú */
+@media (max-width: 768px) {
+    .search-filters {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-filters.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(-100%);
+    }
+}
+
+/* =========================
+   BOTÓN VER TODO RESPONSIVE
+   ========================= */
+
+@media (max-width: 768px) {
+    #showAllBtn {
+        width: 100%;
+        justify-content: center;
+        order: 10; /* Ponerlo al final */
+        margin-top: var(--spacing-sm);
+    }
 }
 
 /* =========================
