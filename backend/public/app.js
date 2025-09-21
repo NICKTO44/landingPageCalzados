@@ -884,6 +884,469 @@ function renderAdminPanel() {
     form.addEventListener('input', handleStockInputChange);
 }
 
+
+
+/* =========================
+   PANEL ADMIN MEJORADO - AGREGAR EN LA PARTE 3
+   Agregar después de la función renderAdminPanel()
+   ========================= */
+
+function renderAdminPanel() {
+    const form = document.getElementById('adminForm');
+    if (!form) return;
+
+    form.innerHTML = '';
+
+    // Crear pestañas para organizar mejor
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'admin-tabs';
+    tabsContainer.innerHTML = `
+        <div class="tab-buttons">
+            <button type="button" class="tab-btn active" data-tab="stock">
+                <span class="btn-icon">📦</span> Gestionar Stock
+            </button>
+            <button type="button" class="tab-btn" data-tab="products">
+                <span class="btn-icon">➕</span> Agregar Producto
+            </button>
+        </div>
+        <div class="tab-content">
+            <div id="stockTab" class="tab-panel active"></div>
+            <div id="productsTab" class="tab-panel"></div>
+        </div>
+    `;
+
+    form.appendChild(tabsContainer);
+
+    // Renderizar contenido de cada pestaña
+    renderStockTab();
+    renderProductsTab();
+    
+    // Configurar event listeners para pestañas
+    setupTabListeners();
+}
+
+function renderStockTab() {
+    const stockTab = document.getElementById('stockTab');
+    if (!stockTab) return;
+
+    if (!AppState.currentProducts.length) {
+        stockTab.innerHTML = '<p style="text-align: center; color: var(--color-gray);">No hay productos para administrar</p>';
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    AppState.currentProducts.forEach(product => {
+        const productDiv = document.createElement('div');
+        productDiv.className = 'admin-product';
+        
+        productDiv.innerHTML = `
+            <div class="product-header">
+                <div>
+                    <h3>${escapeHtml(product.title)}</h3>
+                    <p style="color:var(--color-gray);margin-bottom:12px">${escapeHtml(product.brand)} - S/ ${product.price}</p>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm delete-product" data-product-id="${product.id}">
+                    <span class="btn-icon">🗑️</span> Eliminar
+                </button>
+            </div>
+            <div class="admin-sizes">
+                ${product.sizes.map(size => `
+                    <div class="admin-size">
+                        <label for="stock_${product.id}_${size.size}">
+                            Talla ${size.size}
+                        </label>
+                        <input 
+                            type="number" 
+                            id="stock_${product.id}_${size.size}"
+                            min="0" 
+                            max="999"
+                            value="${size.stock}"
+                            data-product-id="${product.id}"
+                            data-size="${size.size}"
+                            data-original-value="${size.stock}"
+                            aria-describedby="help_${product.id}_${size.size}"
+                        >
+                        <div id="help_${product.id}_${size.size}" class="visually-hidden">
+                            Stock actual: ${size.stock} unidades
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        fragment.appendChild(productDiv);
+    });
+    
+    stockTab.appendChild(fragment);
+    
+    // Agregar listeners para cambios y eliminación
+    stockTab.addEventListener('input', handleStockInputChange);
+    stockTab.addEventListener('click', handleProductDelete);
+}
+
+function renderProductsTab() {
+    const productsTab = document.getElementById('productsTab');
+    if (!productsTab) return;
+
+    productsTab.innerHTML = `
+        <div class="add-product-form">
+            <h3 style="margin-bottom: 20px; color: var(--color-primary);">
+                <span class="btn-icon">➕</span> Agregar Nuevo Producto
+            </h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="newProductTitle">Título del Producto *</label>
+                    <input 
+                        type="text" 
+                        id="newProductTitle" 
+                        placeholder="Ej: Zapato Boni urbanos color azul"
+                        maxlength="255"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newProductBrand">Marca *</label>
+                    <input 
+                        type="text" 
+                        id="newProductBrand" 
+                        placeholder="Ej: Boni"
+                        maxlength="100"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newProductPrice">Precio (S/) *</label>
+                    <input 
+                        type="number" 
+                        id="newProductPrice" 
+                        step="0.01"
+                        min="0"
+                        max="9999.99"
+                        placeholder="74.99"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newProductImage">URL de Imagen *</label>
+                    <input 
+                        type="url" 
+                        id="newProductImage" 
+                        placeholder="/imagenes/imagen4.jpeg o https://..."
+                        maxlength="500"
+                        required
+                    >
+                    <small style="color: var(--color-gray);">
+                        Puedes usar rutas locales (/imagenes/...) o URLs externas
+                    </small>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Tallas y Stock Inicial</label>
+                    <div class="sizes-input">
+                        <div class="size-grid" id="newProductSizes">
+                            <div class="size-item">
+                                <input type="text" placeholder="36" class="size-number" maxlength="3">
+                                <input type="number" placeholder="0" class="size-stock" min="0" max="999">
+                                <button type="button" class="remove-size">✕</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addSizeBtn" class="btn btn-outline btn-sm">
+                            <span class="btn-icon">➕</span> Agregar Talla
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="saveNewProduct" class="btn btn-secondary">
+                    <span class="btn-icon">💾</span> Crear Producto
+                </button>
+                <button type="button" id="clearForm" class="btn btn-outline">
+                    <span class="btn-icon">🗑️</span> Limpiar Formulario
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Configurar event listeners para el formulario
+    setupProductFormListeners();
+}
+
+function setupTabListeners() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+            
+            // Actualizar botones activos
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Actualizar paneles activos
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            document.getElementById(targetTab + 'Tab').classList.add('active');
+        });
+    });
+}
+
+function setupProductFormListeners() {
+    // Agregar talla
+    const addSizeBtn = document.getElementById('addSizeBtn');
+    if (addSizeBtn) {
+        addSizeBtn.addEventListener('click', addNewSizeInput);
+    }
+
+    // Guardar producto
+    const saveBtn = document.getElementById('saveNewProduct');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', handleSaveNewProduct);
+    }
+
+    // Limpiar formulario
+    const clearBtn = document.getElementById('clearForm');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearProductForm);
+    }
+
+    // Eliminar tallas
+    const sizesContainer = document.getElementById('newProductSizes');
+    if (sizesContainer) {
+        sizesContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-size')) {
+                const sizeItem = e.target.closest('.size-item');
+                if (document.querySelectorAll('.size-item').length > 1) {
+                    sizeItem.remove();
+                } else {
+                    showNotification('Debe haber al menos una talla', 'warning');
+                }
+            }
+        });
+    }
+
+    // Validación en tiempo real
+    const requiredInputs = document.querySelectorAll('#productsTab input[required]');
+    requiredInputs.forEach(input => {
+        input.addEventListener('input', validateProductForm);
+    });
+}
+
+function addNewSizeInput() {
+    const sizesContainer = document.getElementById('newProductSizes');
+    if (!sizesContainer) return;
+
+    const sizeItem = document.createElement('div');
+    sizeItem.className = 'size-item';
+    sizeItem.innerHTML = `
+        <input type="text" placeholder="37" class="size-number" maxlength="3">
+        <input type="number" placeholder="0" class="size-stock" min="0" max="999">
+        <button type="button" class="remove-size">✕</button>
+    `;
+
+    sizesContainer.appendChild(sizeItem);
+    
+    // Focus en el nuevo input
+    const newSizeInput = sizeItem.querySelector('.size-number');
+    if (newSizeInput) {
+        newSizeInput.focus();
+    }
+}
+
+function validateProductForm() {
+    const title = document.getElementById('newProductTitle')?.value.trim();
+    const brand = document.getElementById('newProductBrand')?.value.trim();
+    const price = document.getElementById('newProductPrice')?.value;
+    const image = document.getElementById('newProductImage')?.value.trim();
+    
+    const saveBtn = document.getElementById('saveNewProduct');
+    if (!saveBtn) return;
+
+    const isValid = title && brand && price && image && parseFloat(price) > 0;
+    saveBtn.disabled = !isValid;
+    
+    if (isValid) {
+        saveBtn.classList.remove('btn-disabled');
+    } else {
+        saveBtn.classList.add('btn-disabled');
+    }
+}
+
+async function handleSaveNewProduct() {
+    try {
+        // Recopilar datos del formulario
+        const productData = {
+            title: document.getElementById('newProductTitle')?.value.trim(),
+            brand: document.getElementById('newProductBrand')?.value.trim(),
+            price: parseFloat(document.getElementById('newProductPrice')?.value),
+            image_url: document.getElementById('newProductImage')?.value.trim()
+        };
+
+        // Validar datos básicos
+        if (!productData.title || !productData.brand || !productData.price || !productData.image_url) {
+            showNotification('Todos los campos marcados con * son obligatorios', 'error');
+            return;
+        }
+
+        if (productData.price <= 0) {
+            showNotification('El precio debe ser mayor a 0', 'error');
+            return;
+        }
+
+        // Recopilar tallas
+        const sizeInputs = document.querySelectorAll('.size-item');
+        const sizes = [];
+        
+        for (const sizeItem of sizeInputs) {
+            const sizeNumber = sizeItem.querySelector('.size-number')?.value.trim();
+            const sizeStock = parseInt(sizeItem.querySelector('.size-stock')?.value) || 0;
+            
+            if (sizeNumber) {
+                // Verificar que no haya tallas duplicadas
+                if (sizes.some(s => s.size === sizeNumber)) {
+                    showNotification(`La talla ${sizeNumber} está duplicada`, 'error');
+                    return;
+                }
+                
+                sizes.push({
+                    size: sizeNumber,
+                    stock: sizeStock
+                });
+            }
+        }
+
+        if (sizes.length === 0) {
+            showNotification('Debe agregar al menos una talla', 'error');
+            return;
+        }
+
+        // Mostrar loading
+        const saveBtn = document.getElementById('saveNewProduct');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;margin-right:8px;"></span> Creando...';
+        }
+
+        // Crear producto
+        const newProduct = await createProduct(productData, sizes);
+        
+        if (newProduct) {
+            showNotification(`Producto "${productData.title}" creado exitosamente`, 'success');
+            clearProductForm();
+            
+            // Cambiar a pestaña de stock para ver el producto creado
+            document.querySelector('.tab-btn[data-tab="stock"]')?.click();
+            
+            Logger.info('Producto creado:', newProduct);
+        }
+
+    } catch (error) {
+        Logger.error('Error creando producto:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    } finally {
+        // Restaurar botón
+        const saveBtn = document.getElementById('saveNewProduct');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span class="btn-icon">💾</span> Crear Producto';
+        }
+    }
+}
+
+async function createProduct(productData, sizes) {
+    const response = await fetch(`${CONFIG.API_BASE}/api/admin/products`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            password: CONFIG.ADMIN_PASSWORD,
+            product: productData,
+            sizes: sizes
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+async function handleProductDelete(e) {
+    if (!e.target.classList.contains('delete-product')) return;
+    
+    const productId = parseInt(e.target.dataset.productId);
+    const product = AppState.currentProducts.find(p => p.id === productId);
+    
+    if (!product) return;
+
+    const confirmed = confirm(`¿Estás seguro de eliminar "${product.title}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmed) return;
+
+    try {
+        e.target.disabled = true;
+        e.target.innerHTML = '<span class="spinner" style="width:12px;height:12px;"></span>';
+        
+        await deleteProduct(productId);
+        
+        showNotification(`Producto "${product.title}" eliminado correctamente`, 'success');
+        
+    } catch (error) {
+        Logger.error('Error eliminando producto:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function deleteProduct(productId) {
+    const response = await fetch(`${CONFIG.API_BASE}/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            password: CONFIG.ADMIN_PASSWORD
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+function clearProductForm() {
+    const inputs = document.querySelectorAll('#productsTab input');
+    inputs.forEach(input => {
+        input.value = '';
+    });
+
+    // Resetear a una sola talla
+    const sizesContainer = document.getElementById('newProductSizes');
+    if (sizesContainer) {
+        sizesContainer.innerHTML = `
+            <div class="size-item">
+                <input type="text" placeholder="36" class="size-number" maxlength="3">
+                <input type="number" placeholder="0" class="size-stock" min="0" max="999">
+                <button type="button" class="remove-size">✕</button>
+            </div>
+        `;
+    }
+
+    validateProductForm();
+}
+
+
+
+
 function handleStockInputChange(e) {
     if (e.target.type === 'number') {
         const input = e.target;
@@ -935,20 +1398,36 @@ function updateChangesCounter() {
 
 async function handleSaveStock() {
     try {
-        const inputs = document.querySelectorAll('#adminForm input[type="number"]');
+       const inputs = document.querySelectorAll('#stockTab input[type="number"]');
         const updates = [];
         let hasChanges = false;
-        const changedProducts = new Set();
 
-        Array.from(inputs).forEach(input => {
+        console.log('Total inputs encontrados:', inputs.length);
+
+        Array.from(inputs).forEach((input, index) => {
+            // Debug cada input
+            console.log(`Input ${index}:`, {
+                id: input.id,
+                value: input.value,
+                datasets: input.dataset,
+                productId: input.dataset.productId,
+                size: input.dataset.size,
+                originalValue: input.dataset.originalValue
+            });
+
             const productId = parseInt(input.dataset.productId);
             const size = input.dataset.size;
             const stock = parseInt(input.value) || 0;
-            const originalValue = parseInt(input.dataset.originalValue);
+            const originalValue = parseInt(input.dataset.originalValue || 0);
+            
+            // Verificar que los datos son válidos
+            if (isNaN(productId) || !size || size === 'undefined') {
+                console.error('Datos inválidos en input:', { productId, size, stock, input: input.outerHTML });
+                return; // Saltar este input
+            }
             
             if (stock !== originalValue) {
                 hasChanges = true;
-                changedProducts.add(productId);
             }
             
             updates.push({
@@ -958,23 +1437,19 @@ async function handleSaveStock() {
             });
         });
 
+        console.log('Updates preparados:', updates);
+
+        if (updates.length === 0) {
+            showNotification('No se encontraron datos válidos para actualizar', 'warning');
+            return;
+        }
+
         if (!hasChanges) {
             showNotification('No hay cambios para guardar', 'warning');
             return;
         }
 
-        // Confirmación antes de guardar si hay muchos cambios
-        const changedCount = updates.filter(u => {
-            const originalInput = document.querySelector(`input[data-product-id="${u.productId}"][data-size="${u.size}"]`);
-            return originalInput && parseInt(originalInput.dataset.originalValue) !== u.stock;
-        }).length;
-
-        if (changedCount > 10) {
-            const confirmed = confirm(`¿Estás seguro de actualizar ${changedCount} tallas en ${changedProducts.size} productos?`);
-            if (!confirmed) return;
-        }
-
-        // Mostrar loading state
+        // Mostrar loading
         const saveBtn = document.getElementById('saveStock');
         const cancelBtn = document.getElementById('cancelAdmin');
         
@@ -994,13 +1469,7 @@ async function handleSaveStock() {
 
         showNotification('Actualizando stock...', 'info');
         
-        // Guardar con timeout
-        const savePromise = updateStock(updates);
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: La operación tomó demasiado tiempo')), 30000)
-        );
-        
-        await Promise.race([savePromise, timeoutPromise]);
+        await updateStock(updates);
         
         // Marcar como guardado exitosamente
         inputs.forEach(input => {
@@ -1011,35 +1480,13 @@ async function handleSaveStock() {
         });
         
         closeAdminModal();
-        showNotification(`✅ Stock actualizado: ${changedCount} cambios aplicados en ${changedProducts.size} productos`, 'success');
+        showNotification(`Stock actualizado: ${updates.length} cambios aplicados`, 'success');
         
-        Logger.info(`Stock actualizado: ${changedCount} cambios aplicados`);
-        
-        // Analytics tracking
-        if (typeof Analytics !== 'undefined') {
-            Analytics.track('admin_stock_update', {
-                changes_count: changedCount,
-                products_affected: changedProducts.size
-            });
-        }
+        Logger.info(`Stock actualizado: ${updates.length} cambios aplicados`);
 
     } catch (error) {
         Logger.error('Error guardando stock:', error);
-        
-        // Mostrar error específico según el tipo
-        let errorMessage = 'Error actualizando stock';
-        if (error.message.includes('Timeout')) {
-            errorMessage = 'La operación tomó demasiado tiempo. Verifica tu conexión.';
-        } else if (error.message.includes('Network')) {
-            errorMessage = 'Error de conexión. Verifica tu internet.';
-        } else if (error.message.includes('Unauthorized')) {
-            errorMessage = 'Sesión expirada. Cierra y vuelve a abrir el panel.';
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-        
-        showNotification(`❌ ${errorMessage}`, 'error');
-        
+        showNotification(`Error: ${error.message}`, 'error');
     } finally {
         // Restaurar estado de los controles
         const saveBtn = document.getElementById('saveStock');
@@ -1048,6 +1495,7 @@ async function handleSaveStock() {
         
         if (saveBtn) {
             saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">💾</span> Guardar Cambios';
         }
         
         if (cancelBtn) {
@@ -1057,11 +1505,8 @@ async function handleSaveStock() {
         inputs.forEach(input => {
             input.disabled = false;
         });
-        
-        updateChangesCounter();
     }
 }
-
 function closeAdminModal() {
     const modal = document.getElementById('adminModal');
     if (!modal) return;

@@ -1321,3 +1321,312 @@ button {
         border: 1px solid #ddd;
     }
 }
+
+
+
+
+
+/* =========================
+   ESTILOS PARA PANEL ADMIN MEJORADO
+   Agregar al final de styles.css
+   ========================= */
+
+/* Pestañas del admin */
+.admin-tabs {
+    width: 100%;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 2px solid var(--color-light-gray);
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-gray);
+    transition: var(--transition-base);
+    font-size: var(--font-size-base);
+}
+
+.tab-btn:hover {
+    color: var(--color-primary);
+    background: var(--color-light-gray);
+}
+
+.tab-btn.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    background: var(--color-light-gray);
+}
+
+.tab-content {
+    min-height: 300px;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mejoras al producto en stock tab */
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid #eee;
+}
+
+.delete-product {
+    background: transparent;
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    min-height: auto;
+}
+
+.delete-product:hover {
+    background: var(--color-danger);
+    color: white;
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    min-height: 36px;
+}
+
+/* Formulario agregar producto */
+.add-product-form {
+    background: var(--color-white);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid #eee;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: var(--font-size-base);
+}
+
+.form-group input {
+    padding: var(--spacing-md);
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    font-size: 16px; /* Evita zoom en iOS */
+    transition: var(--transition-base);
+    min-height: 44px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.form-group input:invalid {
+    border-color: var(--color-danger);
+}
+
+.form-group small {
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-xs);
+}
+
+/* Selector de tallas */
+.sizes-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.size-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.size-item {
+    display: grid;
+    grid-template-columns: 80px 1fr 40px;
+    gap: var(--spacing-sm);
+    align-items: center;
+    padding: var(--spacing-sm);
+    border: 1px solid #eee;
+    border-radius: var(--border-radius);
+    background: var(--color-light-gray);
+}
+
+.size-number {
+    text-align: center;
+    font-weight: 600;
+}
+
+.size-stock {
+    text-align: center;
+}
+
+.remove-size {
+    background: var(--color-danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: var(--transition-base);
+}
+
+.remove-size:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+/* Acciones del formulario */
+.form-actions {
+    display: flex;
+    gap: var(--spacing-lg);
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.btn-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Contador de cambios en botón */
+.has-changes {
+    background: var(--color-warning) !important;
+    border-color: var(--color-warning) !important;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+
+/* Spinner para botones */
+.spinner {
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive para admin panel */
+@media (max-width: 768px) {
+    .tab-buttons {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        text-align: left;
+        justify-content: flex-start;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .product-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
+    }
+    
+    .delete-product {
+        align-self: flex-end;
+    }
+    
+    .size-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .add-product-form {
+        padding: var(--spacing-lg);
+    }
+    
+    .size-item {
+        grid-template-columns: 60px 1fr 36px;
+        gap: var(--spacing-xs);
+    }
+    
+    .remove-size {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
+
+/* Estados de validación */
+.form-group input:valid {
+    border-color: var(--color-success);
+}
+
+.form-group input:valid + small {
+    color: var(--color-success);
+}
+
+.form-group input:invalid + small {
+    color: var(--color-danger);
+}

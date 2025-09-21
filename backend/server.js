@@ -23,7 +23,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Configuración de base de datos para Railway
 function getDatabaseConfig() {
-  // Si existe DATABASE_URL, usarla (Railway)
   if (process.env.DATABASE_URL) {
     const url = require('url');
     const dbUrl = url.parse(process.env.DATABASE_URL);
@@ -33,17 +32,28 @@ function getDatabaseConfig() {
       port: parseInt(dbUrl.port),
       user: dbUrl.auth.split(':')[0],
       password: dbUrl.auth.split(':')[1],
-      database: dbUrl.pathname.slice(1), // Remover el '/' inicial
+      database: dbUrl.pathname.slice(1),
+      // AGREGAR ESTAS LÍNEAS:
+      connectionLimit: 10,
+      acquireTimeout: 60000,
+      timeout: 60000,
+      reconnect: true,
+      idleTimeout: 300000,
+      ssl: { rejectUnauthorized: false }
     };
   }
   
-  // Configuración local/alternativa
   return {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'shoes_store',
-    port: process.env.DB_PORT || 3306
+    port: process.env.DB_PORT || 3306,
+    // AGREGAR ESTAS LÍNEAS:
+    connectionLimit: 5,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    reconnect: true
   };
 }
 
@@ -53,7 +63,7 @@ let db;
 // Conexión a la base de datos
 async function initDatabase() {
   try {
-    db = await mysql.createConnection(dbConfig);
+    db = mysql.createPool(dbConfig);  // CAMBIO: createPool en lugar de createConnection
     console.log('✅ Conectado a MySQL');
     
     // Crear tablas si no existen
@@ -166,21 +176,40 @@ async function insertInitialData() {
 
 // Función auxiliar para obtener productos con tallas (compatible con MySQL 5.7)
 async function getProductsWithSizes() {
-  // Obtener productos
-  const [products] = await db.execute('SELECT * FROM products ORDER BY id');
-  
-  // Para cada producto, obtener sus tallas
-  for (let product of products) {
-    const [sizes] = await db.execute(
-      'SELECT size, stock FROM product_sizes WHERE product_id = ? ORDER BY size',
-      [product.id]
-    );
-    product.sizes = sizes;
-  }
-  
-  return products;
-}
+  try {
+    // Versión compatible con MariaDB
+    const [rows] = await db.execute(`
+      SELECT 
+        p.id,
+        p.title,
+        p.brand,
+        p.price,
+        p.image_url,
+        p.created_at,
+        p.updated_at
+      FROM products p
+      ORDER BY p.created_at DESC
+    `);
 
+    // Obtener tallas para cada producto por separado
+    for (let product of rows) {
+      const [sizes] = await db.execute(
+        'SELECT size, stock FROM product_sizes WHERE product_id = ? ORDER BY size',
+        [product.id]
+      );
+      product.sizes = sizes;
+    }
+
+    return rows;
+  } catch (error) {
+    console.error('Error obteniendo productos:', error);
+      if (error.code === 'PROTOCOL_CONNECTION_LOST' || 
+      error.message.includes('closed state')) {
+    console.log('🔄 Error de conexión detectado, el pool reconectará automáticamente');
+  }
+    throw error;
+  }
+}
 // RUTAS API
 
 // Obtener todos los productos con sus tallas
@@ -224,79 +253,154 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 // Actualizar stock (solo para admin)
+// Actualizar stock (PUT /api/admin/stock) - CORREGIDO
 app.put('/api/admin/stock', async (req, res) => {
   try {
+    console.log('Body recibido en stock update:', JSON.stringify(req.body, null, 2));
+    
     const { password, updates } = req.body;
     
-    // Validar contraseña de admin
     if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
       return res.status(401).json({ error: 'Contraseña incorrecta' });
     }
 
-    // Actualizar stock en lote
-    for (const update of updates) {
-      await db.execute(`
-        UPDATE product_sizes 
-        SET stock = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE product_id = ? AND size = ?
-      `, [update.stock, update.productId, update.size]);
+    if (!updates || !Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Updates debe ser un array' });
     }
 
-    // Obtener productos actualizados
-    const products = await getProductsWithSizes();
+    // Iniciar transacción
+    await db.beginTransaction();
 
-    // Emitir actualización a todos los clientes conectados
-    io.emit('stock_updated', products);
+    try {
+      for (const update of updates) {
+        const productId = parseInt(update.productId);
+        const size = update.size?.toString().trim();
+        const stock = parseInt(update.stock) || 0;
 
-    res.json({ 
-      success: true, 
-      message: 'Stock actualizado correctamente',
-      products: products
-    });
+        console.log('Actualizando:', { productId, size, stock });
+
+        if (!productId || !size || stock < 0) {
+          throw new Error(`Datos inválidos: productId=${productId}, size=${size}, stock=${stock}`);
+        }
+
+        // Verificar que existe la combinación producto-talla
+        const [existing] = await db.execute(
+          'SELECT id FROM product_sizes WHERE product_id = ? AND size = ?',
+          [productId, size]
+        );
+
+        if (existing.length === 0) {
+          // Si no existe, crear la talla
+          await db.execute(
+            'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
+            [productId, size, stock]
+          );
+        } else {
+          // Si existe, actualizar
+          await db.execute(
+            'UPDATE product_sizes SET stock = ? WHERE product_id = ? AND size = ?',
+            [stock, productId, size]
+          );
+        }
+      }
+
+      await db.commit();
+
+      // Obtener productos actualizados
+      const products = await getProductsWithSizes();
+
+      // Notificar a todos los clientes
+      io.emit('stock_updated', products);
+
+      console.log(`Stock actualizado para ${updates.length} tallas`);
+
+      res.json({ success: true, message: 'Stock actualizado correctamente' });
+
+    } catch (error) {
+      await db.rollback();
+      throw error;
+    }
 
   } catch (error) {
     console.error('Error actualizando stock:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
   }
 });
 
 // Crear nuevo producto (admin)
+// Crear nuevo producto (admin) - CORREGIDO
 app.post('/api/admin/products', async (req, res) => {
   try {
-    const { password, title, brand, price, image_url, sizes } = req.body;
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    const { password, product, sizes } = req.body; // Extraer 'product' object
     
     if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
       return res.status(401).json({ error: 'Contraseña incorrecta' });
     }
 
-    const [result] = await db.execute(
-      'INSERT INTO products (title, brand, price, image_url) VALUES (?, ?, ?, ?)',
-      [title, brand, price, image_url]
-    );
-    
-    const productId = result.insertId;
-    
-    for (const size of sizes) {
-      await db.execute(
-        'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
-        [productId, size.size, size.stock]
-      );
+    // Extraer y limpiar datos del objeto product
+    const title = product?.title?.trim() || '';
+    const brand = product?.brand?.trim() || '';
+    const price = parseFloat(product?.price) || 0;
+    const image_url = product?.image_url?.trim() || '';
+
+    console.log('Datos procesados:', { title, brand, price, image_url });
+
+    // Validar datos
+    if (!title || !brand || !image_url || price <= 0) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios o son inválidos' });
     }
 
-    // Obtener todos los productos actualizados
-    const products = await getProductsWithSizes();
+    if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
+      return res.status(400).json({ error: 'Debe incluir al menos una talla' });
+    }
 
-    // Notificar a todos los clientes
-    io.emit('products_updated', products);
+    // Iniciar transacción
+    await db.beginTransaction();
 
-    res.json({ success: true, productId, products: products });
+    try {
+      const [result] = await db.execute(
+        'INSERT INTO products (title, brand, price, image_url) VALUES (?, ?, ?, ?)',
+        [title, brand, price, image_url]
+      );
+      
+      const productId = result.insertId;
+      
+      for (const size of sizes) {
+        const sizeValue = size?.size?.trim() || '';
+        const stockValue = parseInt(size?.stock) || 0;
+        
+        if (sizeValue) {
+          await db.execute(
+            'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
+            [productId, sizeValue, stockValue]
+          );
+        }
+      }
+
+      await db.commit();
+
+      // Obtener todos los productos actualizados
+      const products = await getProductsWithSizes();
+
+      // Notificar a todos los clientes
+      io.emit('products_updated', products);
+
+      console.log(`Producto creado: ${title} (ID: ${productId})`);
+
+      res.json({ success: true, productId, products: products });
+
+    } catch (error) {
+      await db.rollback();
+      throw error;
+    }
 
   } catch (error) {
     console.error('Error creando producto:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
   }
 });
-
 // IMPORTANTE: Esta ruta debe ir AL FINAL, después de todas las otras rutas
 // Servir frontend estático solo para rutas que no son archivos
 app.get('*', (req, res) => {
@@ -320,6 +424,15 @@ io.on('connection', (socket) => {
 // Inicializar servidor
 const PORT = process.env.PORT || 3000;
 
+// Mantener conexiones vivas
+setInterval(async () => {
+  try {
+    await db.execute('SELECT 1');
+  } catch (error) {
+    console.warn('Ping de BD falló:', error.message);
+  }
+}, 240000); // Cada 4 minutos
+
 async function startServer() {
   await initDatabase();
   
@@ -329,6 +442,663 @@ async function startServer() {
     console.log(`🔧 API: http://localhost:${PORT}/api`);
   });
 }
+
+
+
+
+// ===============================================
+// BACKEND ADMIN API - VERSIÓN CORREGIDA
+// Reemplaza tu ruta POST /api/admin/products actual
+// ===============================================
+
+// Crear nuevo producto (POST /api/admin/products) - VERSIÓN CORREGIDA
+app.post('/api/admin/products', async (req, res) => {
+    try {
+        console.log('🔍 POST /api/admin/products recibido');
+        console.log('Body completo:', JSON.stringify(req.body, null, 2));
+        
+        const { password, product, sizes } = req.body;
+        
+        // Verificar contraseña admin
+        if (password !== process.env.ADMIN_PASSWORD) {
+            console.log('❌ Contraseña incorrecta');
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
+        }
+        
+        // Validar que product existe y tiene propiedades
+        if (!product || typeof product !== 'object') {
+            console.log('❌ Objeto product inválido:', product);
+            return res.status(400).json({ error: 'Datos del producto inválidos' });
+        }
+        
+        // Limpiar y validar datos del producto
+        const cleanProduct = {
+            title: product.title ? product.title.toString().trim() : '',
+            brand: product.brand ? product.brand.toString().trim() : '',
+            price: product.price ? parseFloat(product.price) : 0,
+            image_url: product.image_url ? product.image_url.toString().trim() : ''
+        };
+        
+        console.log('📦 Producto limpio:', cleanProduct);
+        
+        // Validar campos obligatorios
+        if (!cleanProduct.title || !cleanProduct.brand || !cleanProduct.image_url) {
+            console.log('❌ Faltan campos obligatorios');
+            return res.status(400).json({ error: 'Faltan campos obligatorios del producto' });
+        }
+        
+        // Validar precio
+        if (isNaN(cleanProduct.price) || cleanProduct.price <= 0) {
+            console.log('❌ Precio inválido:', cleanProduct.price);
+            return res.status(400).json({ error: 'Precio inválido' });
+        }
+        
+        // Validar y limpiar sizes
+        if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
+            console.log('❌ Sizes inválidas:', sizes);
+            return res.status(400).json({ error: 'Debe incluir al menos una talla' });
+        }
+        
+        const cleanSizes = sizes.map(size => ({
+            size: size.size ? size.size.toString().trim() : '',
+            stock: size.stock ? parseInt(size.stock) : 0
+        })).filter(size => size.size !== ''); // Filtrar tallas vacías
+        
+        console.log('👕 Tallas limpias:', cleanSizes);
+        
+        if (cleanSizes.length === 0) {
+            return res.status(400).json({ error: 'Debe incluir al menos una talla válida' });
+        }
+        
+        // Validar que no hay tallas duplicadas
+        const sizeNumbers = cleanSizes.map(s => s.size);
+        if (new Set(sizeNumbers).size !== sizeNumbers.length) {
+            return res.status(400).json({ error: 'No puede haber tallas duplicadas' });
+        }
+        
+        // Validar stocks
+        for (const size of cleanSizes) {
+            if (size.stock < 0) {
+                return res.status(400).json({ error: `Stock no puede ser negativo para talla ${size.size}` });
+            }
+        }
+        
+        // Verificar que el título no existe ya
+        console.log('🔍 Verificando título único...');
+        const [existingTitle] = await db.execute(
+            'SELECT id FROM products WHERE title = ?',
+            [cleanProduct.title]
+        );
+        
+        if (existingTitle.length > 0) {
+            return res.status(400).json({ error: 'Ya existe un producto con ese título' });
+        }
+        
+        // Iniciar transacción
+        console.log('🔄 Iniciando transacción...');
+        await db.beginTransaction();
+        
+        try {
+            // Insertar producto
+            console.log('📝 Insertando producto:', [cleanProduct.title, cleanProduct.brand, cleanProduct.price, cleanProduct.image_url]);
+            
+            const [productResult] = await db.execute(
+                'INSERT INTO products (title, brand, price, image_url) VALUES (?, ?, ?, ?)',
+                [cleanProduct.title, cleanProduct.brand, cleanProduct.price, cleanProduct.image_url]
+            );
+            
+            const productId = productResult.insertId;
+            console.log('✅ Producto insertado con ID:', productId);
+            
+            // Insertar tallas
+            console.log('👕 Insertando tallas...');
+            for (const size of cleanSizes) {
+                console.log('📏 Insertando talla:', [productId, size.size, size.stock]);
+                
+                await db.execute(
+                    'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
+                    [productId, size.size, size.stock]
+                );
+            }
+            
+            // Confirmar transacción
+            await db.commit();
+            console.log('✅ Transacción confirmada');
+            
+            // Obtener producto completo recién creado
+            const [newProductRows] = await db.execute(
+                `SELECT p.*, 
+                        JSON_ARRAYAGG(
+                            JSON_OBJECT('size', ps.size, 'stock', ps.stock)
+                            ORDER BY ps.size
+                        ) as sizes
+                 FROM products p 
+                 LEFT JOIN product_sizes ps ON p.id = ps.product_id 
+                 WHERE p.id = ?
+                 GROUP BY p.id`,
+                [productId]
+            );
+            
+            const newProduct = newProductRows[0];
+            newProduct.sizes = JSON.parse(newProduct.sizes);
+            
+            // Emitir actualización vía socket a todos los clientes
+            io.emit('products_updated', await getAllProducts());
+            
+            console.log(`✅ Producto creado exitosamente: ${cleanProduct.title} (ID: ${productId})`);
+            
+            res.json({ 
+                message: 'Producto creado exitosamente', 
+                product: newProduct 
+            });
+            
+        } catch (error) {
+            // Revertir transacción en caso de error
+            await db.rollback();
+            console.log('🔙 Transacción revertida');
+            throw error;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error detallado creando producto:', error);
+        console.error('Stack completo:', error.stack);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
+
+// Función auxiliar para obtener todos los productos (CORREGIDA)
+async function getAllProducts() {
+  try {
+    // Versión compatible con MariaDB
+    const [rows] = await db.execute(`
+      SELECT 
+        p.id,
+        p.title,
+        p.brand,
+        p.price,
+        p.image_url,
+        p.created_at,
+        p.updated_at
+      FROM products p
+      ORDER BY p.created_at DESC
+    `);
+
+    // Obtener tallas para cada producto por separado
+    for (let product of rows) {
+      const [sizes] = await db.execute(
+        'SELECT size, stock FROM product_sizes WHERE product_id = ? ORDER BY size',
+        [product.id]
+      );
+      product.sizes = sizes;
+    }
+
+    return rows;
+  } catch (error) {
+    console.error('Error obteniendo productos:', error);
+    throw error;
+  }
+}
+// ===============================================
+// BACKEND ADMIN API - PARTE 2/3
+// ELIMINAR Y ACTUALIZAR PRODUCTOS
+// Agregar después de la Parte 1
+// ===============================================
+
+// Eliminar producto (DELETE /api/admin/products/:id)
+// Eliminar producto (DELETE /api/admin/products/:id)
+app.delete('/api/admin/products/:id', async (req, res) => {
+  try {
+    const { password } = req.body;
+    const productId = parseInt(req.params.id);
+    
+    if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
+      return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+    
+    // Verificar que el producto existe
+    const [existingProduct] = await db.execute(
+      'SELECT id, title FROM products WHERE id = ?',
+      [productId]
+    );
+    
+    if (existingProduct.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    
+    const productTitle = existingProduct[0].title;
+    
+    // Eliminar producto (las tallas se eliminan automáticamente por CASCADE)
+    await db.execute('DELETE FROM products WHERE id = ?', [productId]);
+    
+    // Obtener productos actualizados
+    const products = await getProductsWithSizes();
+    
+    // Notificar a todos los clientes
+    io.emit('products_updated', products);
+    
+    console.log(`Producto eliminado: ${productTitle} (ID: ${productId})`);
+    
+    res.json({ 
+      message: 'Producto eliminado exitosamente',
+      deletedProduct: { id: productId, title: productTitle }
+    });
+    
+  } catch (error) {
+    console.error('Error eliminando producto:', error);
+    res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
+  }
+});
+// Actualizar producto (PUT /api/admin/products/:id)
+app.put('/api/admin/products/:id', async (req, res) => {
+    try {
+        const { password, product } = req.body;
+        const productId = parseInt(req.params.id);
+        
+        // Verificar contraseña admin
+        if (password !== process.env.ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
+        }
+        
+        // Validar ID del producto
+        if (isNaN(productId) || productId <= 0) {
+            return res.status(400).json({ error: 'ID de producto inválido' });
+        }
+        
+        // Verificar que el producto existe
+        const [existingProduct] = await db.execute(
+            'SELECT id, title FROM products WHERE id = ?',
+            [productId]
+        );
+        
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        
+        // Validar datos del producto
+        if (!product.title || !product.brand || !product.price || !product.image_url) {
+            return res.status(400).json({ error: 'Faltan campos obligatorios' });
+        }
+        
+        // Validar precio
+        const price = parseFloat(product.price);
+        if (isNaN(price) || price <= 0) {
+            return res.status(400).json({ error: 'Precio inválido' });
+        }
+        
+        // Verificar que no haya otro producto con el mismo título (excepto el actual)
+        const [duplicateTitle] = await db.execute(
+            'SELECT id FROM products WHERE title = ? AND id != ?',
+            [product.title.trim(), productId]
+        );
+        
+        if (duplicateTitle.length > 0) {
+            return res.status(400).json({ error: 'Ya existe otro producto con ese título' });
+        }
+        
+        // Actualizar producto
+        const [updateResult] = await db.execute(
+            'UPDATE products SET title = ?, brand = ?, price = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [product.title.trim(), product.brand.trim(), price, product.image_url.trim(), productId]
+        );
+        
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).json({ error: 'No se pudo actualizar el producto' });
+        }
+        
+        // Emitir actualización vía socket
+        io.emit('products_updated', await getAllProducts());
+        
+        console.log(`📝 Producto actualizado: ${product.title} (ID: ${productId})`);
+        
+        res.json({ 
+            message: 'Producto actualizado exitosamente',
+            productId: productId
+        });
+        
+    } catch (error) {
+        console.error('❌ Error actualizando producto:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
+
+// Obtener un producto específico (GET /api/admin/products/:id)
+app.get('/api/admin/products/:id', async (req, res) => {
+    try {
+        const productId = parseInt(req.params.id);
+        
+        // Validar ID del producto
+        if (isNaN(productId) || productId <= 0) {
+            return res.status(400).json({ error: 'ID de producto inválido' });
+        }
+        
+        // Obtener producto con sus tallas
+        const [productRows] = await db.execute(
+            `SELECT p.*, 
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT('size', ps.size, 'stock', ps.stock)
+                        ORDER BY ps.size
+                    ) as sizes
+             FROM products p 
+             LEFT JOIN product_sizes ps ON p.id = ps.product_id 
+             WHERE p.id = ?
+             GROUP BY p.id`,
+            [productId]
+        );
+        
+        if (productRows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        
+        const product = productRows[0];
+        product.sizes = JSON.parse(product.sizes || '[]');
+        
+        res.json(product);
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo producto:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
+// ===============================================
+// BACKEND ADMIN API - PARTE 3/3
+// GESTIÓN DE TALLAS
+// Agregar después de la Parte 2
+// ===============================================
+
+// Agregar nueva talla a producto existente (POST /api/admin/products/:id/sizes)
+app.post('/api/admin/products/:id/sizes', async (req, res) => {
+    try {
+        const { password, size, stock } = req.body;
+        const productId = parseInt(req.params.id);
+        
+        // Verificar contraseña admin
+        if (password !== process.env.ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
+        }
+        
+        // Validar ID del producto
+        if (isNaN(productId) || productId <= 0) {
+            return res.status(400).json({ error: 'ID de producto inválido' });
+        }
+        
+        // Validar datos de la talla
+        if (!size || size.trim() === '') {
+            return res.status(400).json({ error: 'La talla es obligatoria' });
+        }
+        
+        const stockValue = parseInt(stock) || 0;
+        if (stockValue < 0) {
+            return res.status(400).json({ error: 'El stock no puede ser negativo' });
+        }
+        
+        // Verificar que el producto existe
+        const [existingProduct] = await db.execute(
+            'SELECT id, title FROM products WHERE id = ?',
+            [productId]
+        );
+        
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        
+        // Verificar que la talla no existe ya para este producto
+        const [existingSize] = await db.execute(
+            'SELECT id FROM product_sizes WHERE product_id = ? AND size = ?',
+            [productId, size.trim()]
+        );
+        
+        if (existingSize.length > 0) {
+            return res.status(400).json({ error: `La talla ${size} ya existe para este producto` });
+        }
+        
+        // Insertar nueva talla
+        const [insertResult] = await db.execute(
+            'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
+            [productId, size.trim(), stockValue]
+        );
+        
+        if (insertResult.affectedRows === 0) {
+            return res.status(500).json({ error: 'No se pudo agregar la talla' });
+        }
+        
+        // Emitir actualización vía socket
+        io.emit('products_updated', await getAllProducts());
+        
+        console.log(`➕ Nueva talla agregada: ${size} para producto ID ${productId} (${existingProduct[0].title})`);
+        
+        res.json({ 
+            message: 'Talla agregada exitosamente',
+            productId: productId,
+            productTitle: existingProduct[0].title,
+            size: size.trim(),
+            stock: stockValue
+        });
+        
+    } catch (error) {
+        console.error('Error agregando talla:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
+
+// Eliminar talla específica (DELETE /api/admin/products/:productId/sizes/:size)
+app.delete('/api/admin/products/:productId/sizes/:size', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const productId = parseInt(req.params.productId);
+        const size = req.params.size;
+        
+        // Verificar contraseña admin
+        if (password !== process.env.ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
+        }
+        
+        // Validar ID del producto
+        if (isNaN(productId) || productId <= 0) {
+            return res.status(400).json({ error: 'ID de producto inválido' });
+        }
+        
+        // Validar talla
+        if (!size || size.trim() === '') {
+            return res.status(400).json({ error: 'Talla no válida' });
+        }
+        
+        // Verificar que existe la combinación producto-talla
+        const [existingSize] = await db.execute(
+            'SELECT id FROM product_sizes WHERE product_id = ? AND size = ?',
+            [productId, size]
+        );
+        
+        if (existingSize.length === 0) {
+            return res.status(404).json({ error: 'Talla no encontrada para este producto' });
+        }
+        
+        // Verificar que no es la última talla del producto
+        const [totalSizes] = await db.execute(
+            'SELECT COUNT(*) as count FROM product_sizes WHERE product_id = ?',
+            [productId]
+        );
+        
+        if (totalSizes[0].count <= 1) {
+            return res.status(400).json({ error: 'No se puede eliminar la última talla del producto. Un producto debe tener al menos una talla.' });
+        }
+        
+        // Obtener info del producto para logging
+        const [productInfo] = await db.execute(
+            'SELECT title FROM products WHERE id = ?',
+            [productId]
+        );
+        
+        // Eliminar talla
+        const [deleteResult] = await db.execute(
+            'DELETE FROM product_sizes WHERE product_id = ? AND size = ?',
+            [productId, size]
+        );
+        
+        if (deleteResult.affectedRows === 0) {
+            return res.status(404).json({ error: 'No se pudo eliminar la talla' });
+        }
+        
+        // Emitir actualización vía socket
+        io.emit('products_updated', await getAllProducts());
+        
+        const productTitle = productInfo[0]?.title || 'Producto desconocido';
+        console.log(`🗑️ Talla eliminada: ${size} del producto "${productTitle}" (ID: ${productId})`);
+        
+        res.json({ 
+            message: 'Talla eliminada exitosamente',
+            productId: productId,
+            productTitle: productTitle,
+            size: size
+        });
+        
+    } catch (error) {
+        console.error('Error eliminando talla:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
+
+// Actualizar stock de talla específica (PUT /api/admin/products/:productId/sizes/:size)
+app.put('/api/admin/products/:productId/sizes/:size', async (req, res) => {
+    try {
+        const { password, stock } = req.body;
+        const productId = parseInt(req.params.productId);
+        const size = req.params.size;
+        
+        // Verificar contraseña admin
+        if (password !== process.env.ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
+        }
+        
+        // Validar ID del producto
+        if (isNaN(productId) || productId <= 0) {
+            return res.status(400).json({ error: 'ID de producto inválido' });
+        }
+        
+        // Validar talla
+        if (!size || size.trim() === '') {
+            return res.status(400).json({ error: 'Talla no válida' });
+        }
+        
+        // Validar stock
+        const stockValue = parseInt(stock);
+        if (isNaN(stockValue) || stockValue < 0) {
+            return res.status(400).json({ error: 'Stock debe ser un número mayor o igual a 0' });
+        }
+        
+        // Verificar que existe la combinación producto-talla
+        const [existingSize] = await db.execute(
+            'SELECT id, stock FROM product_sizes WHERE product_id = ? AND size = ?',
+            [productId, size]
+        );
+        
+        if (existingSize.length === 0) {
+            return res.status(404).json({ error: 'Talla no encontrada para este producto' });
+        }
+        
+        const oldStock = existingSize[0].stock;
+        
+        // Actualizar stock
+        const [updateResult] = await db.execute(
+            'UPDATE product_sizes SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ? AND size = ?',
+            [stockValue, productId, size]
+        );
+        
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).json({ error: 'No se pudo actualizar el stock' });
+        }
+        
+        // Emitir actualización vía socket
+        io.emit('stock_updated', await getAllProducts());
+        
+        // Obtener info del producto para logging
+        const [productInfo] = await db.execute(
+            'SELECT title FROM products WHERE id = ?',
+            [productId]
+        );
+        
+        const productTitle = productInfo[0]?.title || 'Producto desconocido';
+        console.log(`📦 Stock actualizado: "${productTitle}" talla ${size}: ${oldStock} → ${stockValue}`);
+        
+        res.json({ 
+            message: 'Stock actualizado exitosamente',
+            productId: productId,
+            productTitle: productTitle,
+            size: size,
+            oldStock: oldStock,
+            newStock: stockValue
+        });
+        
+    } catch (error) {
+        console.error('Error actualizando stock:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
+
+// Obtener estadísticas del inventario (GET /api/admin/stats)
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        // Stats generales
+        const [productCount] = await db.execute('SELECT COUNT(*) as total FROM products');
+        const [totalStock] = await db.execute('SELECT SUM(stock) as total FROM product_sizes');
+        const [outOfStock] = await db.execute('SELECT COUNT(*) as total FROM product_sizes WHERE stock = 0');
+        const [lowStock] = await db.execute('SELECT COUNT(*) as total FROM product_sizes WHERE stock > 0 AND stock < 5');
+        
+        // Productos más vendidos (menos stock)
+        const [topProducts] = await db.execute(`
+            SELECT 
+                p.title,
+                p.brand,
+                SUM(ps.stock) as total_stock,
+                COUNT(ps.id) as total_sizes
+            FROM products p
+            LEFT JOIN product_sizes ps ON p.id = ps.product_id
+            GROUP BY p.id
+            ORDER BY total_stock ASC
+            LIMIT 5
+        `);
+        
+        // Stock por marca
+        const [stockByBrand] = await db.execute(`
+            SELECT 
+                p.brand,
+                SUM(ps.stock) as total_stock,
+                COUNT(DISTINCT p.id) as products_count
+            FROM products p
+            LEFT JOIN product_sizes ps ON p.id = ps.product_id
+            GROUP BY p.brand
+            ORDER BY total_stock DESC
+        `);
+        
+        res.json({
+            general: {
+                totalProducts: productCount[0].total,
+                totalStock: totalStock[0].total || 0,
+                outOfStockSizes: outOfStock[0].total,
+                lowStockSizes: lowStock[0].total
+            },
+            topProducts: topProducts,
+            stockByBrand: stockByBrand
+        });
+        
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    }
+});
 
 startServer().catch(console.error);
 
