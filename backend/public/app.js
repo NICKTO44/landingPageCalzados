@@ -952,6 +952,11 @@ function renderAdminPanel() {
     setupTabListeners();
 }
 
+/* =========================
+   GESTIÓN DE TALLAS - AGREGAR A TU APP.JS
+   Agregar después de la función renderStockTab()
+   ========================= */
+
 function renderStockTab() {
     const stockTab = document.getElementById('stockTab');
     if (!stockTab) return;
@@ -973,9 +978,14 @@ function renderStockTab() {
                     <h3>${escapeHtml(product.title)}</h3>
                     <p style="color:var(--color-gray);margin-bottom:12px">${escapeHtml(product.brand)} - S/ ${product.price}</p>
                 </div>
-                <button type="button" class="btn btn-outline btn-sm delete-product" data-product-id="${product.id}">
-                    <span class="btn-icon">🗑️</span> Eliminar
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-outline btn-sm manage-sizes" data-product-id="${product.id}">
+                        <span class="btn-icon">📏</span> Gestionar Tallas
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm delete-product" data-product-id="${product.id}">
+                        <span class="btn-icon">🗑️</span> Eliminar
+                    </button>
+                </div>
             </div>
             <div class="admin-sizes">
                 ${product.sizes.map(size => `
@@ -1007,9 +1017,314 @@ function renderStockTab() {
     
     stockTab.appendChild(fragment);
     
-    // Agregar listeners para cambios y eliminación
+    // Agregar listeners para cambios, eliminación y gestión de tallas
     stockTab.addEventListener('input', handleStockInputChange);
-    stockTab.addEventListener('click', handleProductDelete);
+    stockTab.addEventListener('click', handleAdminStockActions);
+}
+
+// Función unificada para manejar acciones del panel admin
+function handleAdminStockActions(e) {
+    if (e.target.classList.contains('delete-product')) {
+        handleProductDelete(e);
+    } else if (e.target.classList.contains('manage-sizes')) {
+        handleManageSizes(e);
+    }
+}
+
+// Nueva función para gestionar tallas
+function handleManageSizes(e) {
+    const productId = parseInt(e.target.dataset.productId);
+    const product = AppState.currentProducts.find(p => p.id === productId);
+    
+    if (!product) {
+        showNotification('Producto no encontrado', 'error');
+        return;
+    }
+    
+    openSizeManagerModal(product);
+}
+
+// Modal para gestionar tallas
+function openSizeManagerModal(product) {
+    // Crear modal dinámicamente
+    const modalHtml = `
+        <div id="sizeManagerModal" class="modal active" role="dialog" aria-modal="true" aria-labelledby="sizeManagerTitle">
+            <div class="modal-content" style="max-width: 600px;">
+                <header class="modal-header">
+                    <h2 id="sizeManagerTitle">Gestionar Tallas - ${escapeHtml(product.title)}</h2>
+                    <button id="closeSizeManager" class="modal-close" type="button" aria-label="Cerrar gestor de tallas">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </header>
+                
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="color: var(--color-primary); margin-bottom: 12px;">Tallas Actuales</h3>
+                        <div id="currentSizesList" class="size-grid">
+                            ${product.sizes.map(size => `
+                                <div class="size-item" style="grid-template-columns: 1fr 1fr 40px; align-items: center;">
+                                    <span class="size-number" style="text-align: center; font-weight: 600;">Talla ${size.size}</span>
+                                    <span class="size-stock" style="text-align: center;">Stock: ${size.stock}</span>
+                                    <button type="button" class="remove-size" data-product-id="${product.id}" data-size="${size.size}" title="Eliminar talla ${size.size}">✕</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid #eee; padding-top: 20px;">
+                        <h3 style="color: var(--color-primary); margin-bottom: 12px;">Agregar Nueva Talla</h3>
+                        <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end;">
+                            <div class="form-group">
+                                <label for="newSizeNumber">Número de Talla</label>
+                                <input type="text" id="newSizeNumber" placeholder="36" maxlength="3" style="text-align: center;">
+                            </div>
+                            <div class="form-group">
+                                <label for="newSizeStock">Stock Inicial</label>
+                                <input type="number" id="newSizeStock" placeholder="0" min="0" max="999" value="0">
+                            </div>
+                            <button type="button" id="addNewSize" class="btn btn-secondary" data-product-id="${product.id}">
+                                <span class="btn-icon">➕</span> Agregar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 24px; padding: 16px; background: var(--color-light-gray); border-radius: 8px;">
+                        <h4 style="color: var(--color-primary); margin-bottom: 8px;">💡 Tallas Sugeridas</h4>
+                        <p style="font-size: 14px; color: var(--color-gray); margin-bottom: 12px;">Tallas comunes que podrías necesitar:</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${['36', '37', '38', '39', '40', '41', '42', '43'].map(size => {
+                                const exists = product.sizes.some(s => s.size === size);
+                                return exists ? '' : `
+                                    <button type="button" class="btn btn-outline btn-sm quick-add-size" 
+                                            data-product-id="${product.id}" data-size="${size}" 
+                                            style="min-height: 32px; padding: 4px 8px; font-size: 12px;">
+                                        ${size}
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <footer class="modal-footer">
+                    <button id="closeSizeManagerFooter" class="btn btn-outline" type="button">Cerrar</button>
+                </footer>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.body.style.overflow = 'hidden';
+    
+    // Configurar event listeners del modal
+    setupSizeManagerListeners(product);
+    
+    // Focus en el primer input
+    const firstInput = document.getElementById('newSizeNumber');
+    if (firstInput) {
+        firstInput.focus();
+    }
+}
+
+function setupSizeManagerListeners(product) {
+    const modal = document.getElementById('sizeManagerModal');
+    if (!modal) return;
+    
+    // Cerrar modal
+    const closeButtons = modal.querySelectorAll('#closeSizeManager, #closeSizeManagerFooter');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', closeSizeManagerModal);
+    });
+    
+    // Cerrar con click en fondo
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeSizeManagerModal();
+        }
+    });
+    
+    // Cerrar con Escape
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeSizeManagerModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Agregar nueva talla
+    const addBtn = document.getElementById('addNewSize');
+    if (addBtn) {
+        addBtn.addEventListener('click', handleAddNewSize);
+    }
+    
+    // Agregar talla rápida
+    modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('quick-add-size')) {
+            const size = e.target.dataset.size;
+            const productId = parseInt(e.target.dataset.productId);
+            addSizeToProduct(productId, size, 0);
+        }
+    });
+    
+    // Eliminar talla
+    modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-size')) {
+            const productId = parseInt(e.target.dataset.productId);
+            const size = e.target.dataset.size;
+            
+            if (product.sizes.length <= 1) {
+                showNotification('No se puede eliminar la última talla del producto', 'warning');
+                return;
+            }
+            
+            const confirmed = confirm(`¿Eliminar la talla ${size}?`);
+            if (confirmed) {
+                removeSizeFromProduct(productId, size);
+            }
+        }
+    });
+    
+    // Enter para agregar talla
+    const newSizeInput = document.getElementById('newSizeNumber');
+    if (newSizeInput) {
+        newSizeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddNewSize();
+            }
+        });
+    }
+}
+
+function closeSizeManagerModal() {
+    const modal = document.getElementById('sizeManagerModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+async function handleAddNewSize() {
+    const sizeInput = document.getElementById('newSizeNumber');
+    const stockInput = document.getElementById('newSizeStock');
+    const addBtn = document.getElementById('addNewSize');
+    
+    if (!sizeInput || !stockInput || !addBtn) return;
+    
+    const size = sizeInput.value.trim();
+    const stock = parseInt(stockInput.value) || 0;
+    const productId = parseInt(addBtn.dataset.productId);
+    
+    if (!size) {
+        showNotification('Ingresa el número de talla', 'warning');
+        sizeInput.focus();
+        return;
+    }
+    
+    if (stock < 0) {
+        showNotification('El stock no puede ser negativo', 'warning');
+        stockInput.focus();
+        return;
+    }
+    
+    // Verificar que la talla no existe
+    const product = AppState.currentProducts.find(p => p.id === productId);
+    if (product && product.sizes.some(s => s.size === size)) {
+        showNotification(`La talla ${size} ya existe`, 'warning');
+        sizeInput.focus();
+        return;
+    }
+    
+    await addSizeToProduct(productId, size, stock);
+    
+    // Limpiar inputs
+    sizeInput.value = '';
+    stockInput.value = '0';
+    sizeInput.focus();
+}
+
+// Funciones para interactuar con el backend
+async function addSizeToProduct(productId, size, stock) {
+    try {
+        showNotification('Agregando talla...', 'info');
+        
+        const response = await fetch(`${CONFIG.API_BASE}/api/admin/products/${productId}/sizes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                password: CONFIG.ADMIN_PASSWORD,
+                size: size,
+                stock: stock
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        showNotification(`Talla ${size} agregada exitosamente`, 'success');
+        
+        // El socket.io ya actualizará los productos automáticamente
+        Logger.info('Talla agregada:', result);
+        
+        // Actualizar el modal
+        setTimeout(() => {
+            closeSizeManagerModal();
+            const product = AppState.currentProducts.find(p => p.id === productId);
+            if (product) {
+                openSizeManagerModal(product);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        Logger.error('Error agregando talla:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function removeSizeFromProduct(productId, size) {
+    try {
+        showNotification('Eliminando talla...', 'info');
+        
+        const response = await fetch(`${CONFIG.API_BASE}/api/admin/products/${productId}/sizes/${size}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                password: CONFIG.ADMIN_PASSWORD
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        showNotification(`Talla ${size} eliminada exitosamente`, 'success');
+        
+        Logger.info('Talla eliminada:', result);
+        
+        // Actualizar el modal
+        setTimeout(() => {
+            closeSizeManagerModal();
+            const product = AppState.currentProducts.find(p => p.id === productId);
+            if (product) {
+                openSizeManagerModal(product);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        Logger.error('Error eliminando talla:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
 }
 
 function renderProductsTab() {
