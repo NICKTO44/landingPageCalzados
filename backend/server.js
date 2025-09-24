@@ -255,151 +255,224 @@ app.get('/api/products/:id', async (req, res) => {
 // Actualizar stock (solo para admin)
 // Actualizar stock (PUT /api/admin/stock) - CORREGIDO
 app.put('/api/admin/stock', async (req, res) => {
-  try {
-    console.log('Body recibido en stock update:', JSON.stringify(req.body, null, 2));
+    let connection = null;
     
-    const { password, updates } = req.body;
-    
-    if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
-      return res.status(401).json({ error: 'Contraseña incorrecta' });
-    }
-
-    if (!updates || !Array.isArray(updates)) {
-      return res.status(400).json({ error: 'Updates debe ser un array' });
-    }
-
-    // Iniciar transacción
-    await db.beginTransaction();
-
     try {
-      for (const update of updates) {
-        const productId = parseInt(update.productId);
-        const size = update.size?.toString().trim();
-        const stock = parseInt(update.stock) || 0;
-
-        console.log('Actualizando:', { productId, size, stock });
-
-        if (!productId || !size || stock < 0) {
-          throw new Error(`Datos inválidos: productId=${productId}, size=${size}, stock=${stock}`);
+        console.log('Body recibido en stock update:', JSON.stringify(req.body, null, 2));
+        
+        const { password, updates } = req.body;
+        
+        if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
         }
 
-        // Verificar que existe la combinación producto-talla
-        const [existing] = await db.execute(
-          'SELECT id FROM product_sizes WHERE product_id = ? AND size = ?',
-          [productId, size]
-        );
-
-        if (existing.length === 0) {
-          // Si no existe, crear la talla
-          await db.execute(
-            'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
-            [productId, size, stock]
-          );
-        } else {
-          // Si existe, actualizar
-          await db.execute(
-            'UPDATE product_sizes SET stock = ? WHERE product_id = ? AND size = ?',
-            [stock, productId, size]
-          );
+        if (!updates || !Array.isArray(updates)) {
+            return res.status(400).json({ error: 'Updates debe ser un array' });
         }
-      }
 
-      await db.commit();
+        // Obtener conexión del pool para transacción
+        connection = await db.getConnection();
+        
+        // Iniciar transacción en la conexión específica
+        await connection.beginTransaction();
 
-      // Obtener productos actualizados
-      const products = await getProductsWithSizes();
+        try {
+            for (const update of updates) {
+                const productId = parseInt(update.productId);
+                const size = update.size?.toString().trim();
+                const stock = parseInt(update.stock) || 0;
 
-      // Notificar a todos los clientes
-      io.emit('stock_updated', products);
+                console.log('Actualizando:', { productId, size, stock });
 
-      console.log(`Stock actualizado para ${updates.length} tallas`);
+                if (!productId || !size || stock < 0) {
+                    throw new Error(`Datos inválidos: productId=${productId}, size=${size}, stock=${stock}`);
+                }
 
-      res.json({ success: true, message: 'Stock actualizado correctamente' });
+                // Verificar que existe la combinación producto-talla
+                const [existing] = await connection.execute(
+                    'SELECT id FROM product_sizes WHERE product_id = ? AND size = ?',
+                    [productId, size]
+                );
+
+                if (existing.length === 0) {
+                    // Si no existe, crear la talla
+                    await connection.execute(
+                        'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
+                        [productId, size, stock]
+                    );
+                } else {
+                    // Si existe, actualizar
+                    await connection.execute(
+                        'UPDATE product_sizes SET stock = ? WHERE product_id = ? AND size = ?',
+                        [stock, productId, size]
+                    );
+                }
+            }
+
+            await connection.commit();
+
+            // Obtener productos actualizados usando el pool
+            const products = await getProductsWithSizes();
+
+            // Notificar a todos los clientes
+            io.emit('stock_updated', products);
+
+            console.log(`Stock actualizado para ${updates.length} tallas`);
+
+            res.json({ success: true, message: 'Stock actualizado correctamente' });
+
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        }
 
     } catch (error) {
-      await db.rollback();
-      throw error;
+        console.error('Error actualizando stock:', error);
+        res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
+    } finally {
+        // Liberar conexión de vuelta al pool
+        if (connection) connection.release();
     }
-
-  } catch (error) {
-    console.error('Error actualizando stock:', error);
-    res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
-  }
 });
 
 // Crear nuevo producto (admin)
 // Crear nuevo producto (admin) - CORREGIDO
+// Crear nuevo producto (POST /api/admin/products) - VERSIÓN CORREGIDA FINAL
 app.post('/api/admin/products', async (req, res) => {
-  try {
-    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    let connection = null;
     
-    const { password, product, sizes } = req.body; // Extraer 'product' object
-    
-    if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
-      return res.status(401).json({ error: 'Contraseña incorrecta' });
-    }
-
-    // Extraer y limpiar datos del objeto product
-    const title = product?.title?.trim() || '';
-    const brand = product?.brand?.trim() || '';
-    const price = parseFloat(product?.price) || 0;
-    const image_url = product?.image_url?.trim() || '';
-
-    console.log('Datos procesados:', { title, brand, price, image_url });
-
-    // Validar datos
-    if (!title || !brand || !image_url || price <= 0) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios o son inválidos' });
-    }
-
-    if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
-      return res.status(400).json({ error: 'Debe incluir al menos una talla' });
-    }
-
-    // Iniciar transacción
-    await db.beginTransaction();
-
     try {
-      const [result] = await db.execute(
-        'INSERT INTO products (title, brand, price, image_url) VALUES (?, ?, ?, ?)',
-        [title, brand, price, image_url]
-      );
-      
-      const productId = result.insertId;
-      
-      for (const size of sizes) {
-        const sizeValue = size?.size?.trim() || '';
-        const stockValue = parseInt(size?.stock) || 0;
+        console.log('🔍 POST /api/admin/products recibido');
+        console.log('Body completo:', JSON.stringify(req.body, null, 2));
         
-        if (sizeValue) {
-          await db.execute(
-            'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
-            [productId, sizeValue, stockValue]
-          );
+        const { password, product, sizes } = req.body;
+        
+        // Verificar contraseña admin
+        if (password !== (process.env.ADMIN_PASSWORD || 'Daniela1809')) {
+            console.log('❌ Contraseña incorrecta');
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
         }
-      }
-
-      await db.commit();
-
-      // Obtener todos los productos actualizados
-      const products = await getProductsWithSizes();
-
-      // Notificar a todos los clientes
-      io.emit('products_updated', products);
-
-      console.log(`Producto creado: ${title} (ID: ${productId})`);
-
-      res.json({ success: true, productId, products: products });
-
+        
+        // Validar que product existe y tiene propiedades
+        if (!product || typeof product !== 'object') {
+            console.log('❌ Objeto product inválido:', product);
+            return res.status(400).json({ error: 'Datos del producto inválidos' });
+        }
+        
+        // Limpiar y validar datos del producto
+        const cleanProduct = {
+            title: product.title ? product.title.toString().trim() : '',
+            brand: product.brand ? product.brand.toString().trim() : '',
+            price: product.price ? parseFloat(product.price) : 0,
+            image_url: product.image_url ? product.image_url.toString().trim() : ''
+        };
+        
+        console.log('📦 Producto limpio:', cleanProduct);
+        
+        // Validar campos obligatorios
+        if (!cleanProduct.title || !cleanProduct.brand || !cleanProduct.image_url) {
+            console.log('❌ Faltan campos obligatorios');
+            return res.status(400).json({ error: 'Faltan campos obligatorios del producto' });
+        }
+        
+        // Validar precio
+        if (isNaN(cleanProduct.price) || cleanProduct.price <= 0) {
+            console.log('❌ Precio inválido:', cleanProduct.price);
+            return res.status(400).json({ error: 'Precio inválido' });
+        }
+        
+        // Validar y limpiar sizes
+        if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
+            console.log('❌ Sizes inválidas:', sizes);
+            return res.status(400).json({ error: 'Debe incluir al menos una talla' });
+        }
+        
+        const cleanSizes = sizes.map(size => ({
+            size: size.size ? size.size.toString().trim() : '',
+            stock: size.stock ? parseInt(size.stock) : 0
+        })).filter(size => size.size !== '');
+        
+        console.log('👕 Tallas limpias:', cleanSizes);
+        
+        if (cleanSizes.length === 0) {
+            return res.status(400).json({ error: 'Debe incluir al menos una talla válida' });
+        }
+        
+        // Obtener conexión del pool
+        connection = await db.getConnection();
+        
+        // Verificar que el título no existe ya
+        console.log('🔍 Verificando título único...');
+        const [existingTitle] = await connection.execute(
+            'SELECT id FROM products WHERE title = ?',
+            [cleanProduct.title]
+        );
+        
+        if (existingTitle.length > 0) {
+            return res.status(400).json({ error: 'Ya existe un producto con ese título' });
+        }
+        
+        // Iniciar transacción
+        console.log('🔄 Iniciando transacción...');
+        await connection.beginTransaction();
+        
+        try {
+            // Insertar producto
+            console.log('📝 Insertando producto:', [cleanProduct.title, cleanProduct.brand, cleanProduct.price, cleanProduct.image_url]);
+            
+            const [productResult] = await connection.execute(
+                'INSERT INTO products (title, brand, price, image_url) VALUES (?, ?, ?, ?)',
+                [cleanProduct.title, cleanProduct.brand, cleanProduct.price, cleanProduct.image_url]
+            );
+            
+            const productId = productResult.insertId;
+            console.log('✅ Producto insertado con ID:', productId);
+            
+            // Insertar tallas
+            console.log('👕 Insertando tallas...');
+            for (const size of cleanSizes) {
+                console.log('📏 Insertando talla:', [productId, size.size, size.stock]);
+                
+                await connection.execute(
+                    'INSERT INTO product_sizes (product_id, size, stock) VALUES (?, ?, ?)',
+                    [productId, size.size, size.stock]
+                );
+            }
+            
+            // Confirmar transacción
+            await connection.commit();
+            console.log('✅ Transacción confirmada');
+            
+            // Obtener productos actualizados
+            const products = await getProductsWithSizes();
+            
+            // Emitir actualización vía socket a todos los clientes
+            io.emit('products_updated', products);
+            
+            console.log(`✅ Producto creado exitosamente: ${cleanProduct.title} (ID: ${productId})`);
+            
+            res.json({ 
+                success: true,
+                message: 'Producto creado exitosamente', 
+                productId: productId
+            });
+            
+        } catch (error) {
+            // Revertir transacción en caso de error
+            await connection.rollback();
+            console.log('🔙 Transacción revertida');
+            throw error;
+        }
+        
     } catch (error) {
-      await db.rollback();
-      throw error;
+        console.error('❌ Error detallado creando producto:', error);
+        res.status(500).json({ 
+            error: error.message || 'Error interno del servidor' 
+        });
+    } finally {
+        // Liberar conexión de vuelta al pool
+        if (connection) connection.release();
     }
-
-  } catch (error) {
-    console.error('Error creando producto:', error);
-    res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
-  }
 });
 // IMPORTANTE: Esta ruta debe ir AL FINAL, después de todas las otras rutas
 // Servir frontend estático solo para rutas que no son archivos
