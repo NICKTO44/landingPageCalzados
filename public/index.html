@@ -1,0 +1,2699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShoesStore - Elegancia en Cada Paso</title>
+    <meta name="description" content="Descubre nuestra colección exclusiva de zapatos de las mejores marcas. Calidad, estilo y comodidad en cada paso.">
+    <meta name="keywords" content="zapatos, calzado, moda, elegancia, marcas">
+    <meta name="author" content="ShoesStore">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Preconnect para performance -->
+    <link rel="preconnect" href="https://images.unsplash.com">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- NOTIFICATION -->
+    <div id="notification" class="notification" role="alert" aria-live="polite"></div>
+
+    <!-- HEADER -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo" aria-label="ShoesStore - Ir al inicio">
+                    <span class="logo-icon">👟</span>
+                    ShoesStore
+                </a>
+                
+                <nav class="search-filters" role="search" aria-label="Filtros de búsqueda">
+                    <div class="connection-status" aria-live="polite">
+                        <div id="connectionDot" class="connection-dot" aria-hidden="true"></div>
+                        <span id="connectionText">Conectando...</span>
+                    </div>
+                    
+                    <div class="search-box">
+                        <label for="searchInput" class="visually-hidden">Buscar productos</label>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Buscar zapatos..."
+                            autocomplete="off"
+                            aria-describedby="search-help"
+                        >
+                        <div id="search-help" class="visually-hidden">
+                            Busca por nombre de producto o marca
+                        </div>
+                    </div>
+                    
+                    <div class="filter-box">
+                        <label for="brandFilter" class="visually-hidden">Filtrar por marca</label>
+                        <select id="brandFilter" class="filter-select" aria-describedby="filter-help">
+                            <option value="">Todas las marcas</option>
+                        </select>
+                        <div id="filter-help" class="visually-hidden">
+                            Filtra productos por marca específica
+                        </div>
+                    </div>
+                    
+                    <button 
+                        id="showAllBtn" 
+                        class="btn btn-outline" 
+                        type="button"
+                        aria-label="Mostrar todos los productos"
+                    >
+                        <span class="btn-icon" aria-hidden="true">🔍</span>
+                        Ver Todo
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero" role="banner">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Elegancia en Cada Paso</h1>
+                    <p>Descubre nuestra colección exclusiva de zapatos de las mejores marcas. Calidad, estilo y comodidad que transforman tu caminar en una experiencia única.</p>
+                    <div class="hero-actions">
+                        <a href="#products" class="btn btn-secondary" aria-describedby="catalog-help">
+                            <span class="btn-icon" aria-hidden="true">👟</span>
+                            Ver Catálogo
+                        </a>
+                        <div id="catalog-help" class="visually-hidden">
+                            Ir a la sección de productos
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img 
+                        src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=900&h=600&fit=crop&crop=center" 
+                        alt="Zapatos elegantes de alta calidad en exhibición"
+                        loading="eager"
+                        decoding="async"
+                    >
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRODUCTS SECTION -->
+    <main id="products" class="products-section">
+        <div class="container">
+            <header class="section-header">
+                <h2>Nuestra Colección</h2>
+                <p>Encuentra el calzado perfecto para tu estilo y personalidad</p>
+            </header>
+            
+            <!-- Loading State -->
+            <div id="loadingIndicator" class="loading" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <span>Cargando productos...</span>
+            </div>
+
+            <!-- Products Grid -->
+            <div 
+                id="productsGrid" 
+                class="products-grid" 
+                role="grid" 
+                aria-label="Catálogo de productos"
+                style="display:none"
+            ></div>
+
+            <!-- No Results State -->
+            <div 
+                id="noResults" 
+                class="no-results" 
+                style="display:none"
+                role="status"
+                aria-live="polite"
+            >
+                <div class="no-results-icon" aria-hidden="true">😔</div>
+                <h3>No se encontraron productos</h3>
+                <p>Intenta con otros términos de búsqueda o selecciona una marca diferente.</p>
+                <button 
+                    id="clearFiltersBtn" 
+                    class="btn btn-outline"
+                    type="button"
+                >
+                    Limpiar filtros
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- PRODUCT MODAL -->
+    <div 
+        id="productModal" 
+        class="modal" 
+        role="dialog" 
+        aria-modal="true" 
+        aria-hidden="true"
+        aria-labelledby="modalTitle"
+    >
+        <div class="modal-content" role="document">
+            <header class="modal-header">
+                <h2 id="modalTitle">Detalles del Producto</h2>
+                <button 
+                    id="modalCloseBtn" 
+                    class="modal-close" 
+                    type="button"
+                    aria-label="Cerrar ventana de detalles"
+                >
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </header>
+            
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img 
+                        id="modalImage" 
+                        src="" 
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </div>
+                
+                <div class="modal-details">
+                    <h3 id="modalProductTitle"></h3>
+                    <p id="modalBrand" class="modal-brand"></p>
+                    <div id="modalPrice" class="modal-price"></div>
+
+                    <div class="size-selector">
+                        <h4>Selecciona tu talla:</h4>
+                        <div 
+                            id="modalSizes" 
+                            class="size-options" 
+                            role="radiogroup"
+                            aria-label="Seleccionar talla"
+                        ></div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button 
+                            id="buyBtn" 
+                            class="btn btn-secondary" 
+                            type="button" 
+                            disabled 
+                            aria-describedby="buy-help"
+                        >
+                            <span class="btn-icon" aria-hidden="true">💬</span>
+                            Comprar por WhatsApp
+                        </button>
+                        <div id="buy-help" class="visually-hidden">
+                            Selecciona una talla para habilitar la compra
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
+    <div 
+        id="adminModal" 
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="adminTitle"
+    >
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="adminTitle">Panel de Administración</h2>
+                <button 
+                    id="adminClose" 
+                    class="modal-close" 
+                    type="button"
+                    aria-label="Cerrar panel de administración"
+                >
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </header>
+            
+            <div class="modal-body">
+                <div id="adminForm" class="admin-form" role="form"></div>
+            </div>
+            
+            <footer class="modal-footer">
+                <button 
+                    id="saveStock" 
+                    class="btn btn-primary" 
+                    type="button"
+                >
+                    <span class="btn-icon" aria-hidden="true">💾</span>
+                    Guardar Cambios
+                </button>
+                <button 
+                    id="cancelAdmin" 
+                    class="btn btn-outline" 
+                    type="button"
+                >
+                    Cancelar
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>ShoesStore</h3>
+                    <p>Elegancia en cada paso desde 2025</p>
+                </div>
+                <div class="footer-links">
+                    <a href="https://wa.me/51960086136?text=Hola,%20me%20interesa%20información%20sobre%20sus%20zapatos" class="footer-link" aria-label="Contactar por WhatsApp" target="_blank" rel="noopener noreferrer">
+                        <svg class="footer-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.516"/>
+                        </svg>
+                        WhatsApp
+                    </a>
+                    <a href="https://instagram.com/danielastore" class="footer-link" aria-label="Seguir en Instagram" target="_blank" rel="noopener noreferrer">
+                        <svg class="footer-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                        Instagram
+                    </a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 ShoesStore. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts - TODOS LOS SCRIPTS SON AHORA INTERNOS Y SEGUROS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // =====================================================
+        // SHOESSTORE APP - VERSIÓN SEGURA COMPLETA - PARTE 1/4
+        // CONFIGURACIÓN E INICIALIZACIÓN
+        // =====================================================
+
+        // Configuración de la aplicación - SIN CONTRASEÑA HARDCODEADA
+        const CONFIG = {
+            API_BASE: window.location.origin,
+            WHATSAPP_NUMBER: "51960086136",
+            ADMIN_PASSWORD: null, // Se obtendrá vía prompt seguro
+            DEBOUNCE_DELAY: 300,
+            NOTIFICATION_DURATION: 3000,
+            LAZY_LOADING_THRESHOLD: '200px'
+        };
+
+        // Estado global de la aplicación
+        const AppState = {
+            currentProducts: [],
+            filteredProducts: [],
+            currentProduct: null,
+            selectedSize: null,
+            isConnected: false,
+            isLoading: false,
+            socket: null,
+            observers: {
+                image: null,
+                grid: null
+            }
+        };
+
+        // INICIALIZACIÓN
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                showLoadingState();
+                setupEventListeners();
+                initializeSocket();
+                await loadProducts();
+                setupLazyLoading();
+                setupAccessibility();
+                hideLoadingState();
+                
+                Logger.info('Aplicación inicializada correctamente');
+            } catch (error) {
+                Logger.error('Error inicializando aplicación:', error);
+                showNotification('Error inicializando la aplicación', 'error');
+            }
+        }
+
+        // ===== SISTEMA DE AUTENTICACIÓN ADMIN =====
+// Login una sola vez por sesión
+function adminLogin() {
+    const password = prompt("🔐 Contraseña de administrador:");
+    if (password) {
+        sessionStorage.setItem('adminAuth', password);
+        showNotification('Autenticado correctamente', 'success');
+        return password;
+    }
+    showNotification('Autenticación cancelada', 'warning');
+    return null;
+}
+
+// Obtener contraseña (pide solo la primera vez)
+function getAdminPassword() {
+    let password = sessionStorage.getItem('adminAuth');
+    if (!password) {
+        password = adminLogin();
+        if (!password) {
+            showNotification('Se requiere autenticación para esta acción', 'error');
+            return null;
+        }
+    }
+    return password;
+}
+
+// Logout admin (opcional - útil para el panel admin)
+function adminLogout() {
+    sessionStorage.removeItem('adminAuth');
+    showNotification('Sesión de administrador cerrada', 'info');
+    closeAdminPanel(); // Si tienes esta función
+}
+
+// Verificar si está autenticado
+function isAdminAuthenticated() {
+    return sessionStorage.getItem('adminAuth') !== null;
+}
+        function showLoadingState() {
+            AppState.isLoading = true;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const productsGrid = document.getElementById('productsGrid');
+            
+            if (loadingIndicator) loadingIndicator.style.display = 'flex';
+            if (productsGrid) productsGrid.style.display = 'none';
+        }
+
+        function hideLoadingState() {
+            AppState.isLoading = false;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const productsGrid = document.getElementById('productsGrid');
+            
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            if (productsGrid) productsGrid.style.display = 'grid';
+        }
+        // =====================================================
+        // SHOESSTORE APP - PARTE 2/4
+        // SOCKET.IO, API CALLS Y EVENT LISTENERS
+        // =====================================================
+
+        // CONEXIÓN SOCKET.IO
+        function initializeSocket() {
+            try {
+                AppState.socket = io({
+                    transports: ['websocket', 'polling'],
+                    upgrade: true,
+                    rememberUpgrade: true
+                });
+                
+                AppState.socket.on('connect', handleSocketConnect);
+                AppState.socket.on('disconnect', handleSocketDisconnect);
+                AppState.socket.on('stock_updated', handleStockUpdate);
+                AppState.socket.on('products_updated', handleProductsUpdate);
+                AppState.socket.on('connect_error', handleSocketError);
+                
+            } catch (error) {
+                Logger.error('Error inicializando socket:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        function handleSocketConnect() {
+            AppState.isConnected = true;
+            updateConnectionStatus(true);
+            showNotification('Conectado al servidor', 'success');
+            Logger.info('Socket conectado');
+        }
+
+        function handleSocketDisconnect() {
+            AppState.isConnected = false;
+            updateConnectionStatus(false);
+            showNotification('Conexión perdida. Reintentando...', 'warning');
+            Logger.warn('Socket desconectado');
+        }
+
+        function handleSocketError(error) {
+            Logger.error('Error de socket:', error);
+            updateConnectionStatus(false);
+        }
+
+        function handleStockUpdate(products) {
+            AppState.currentProducts = products;
+            updateProductsDisplay();
+            showNotification('Stock actualizado en tiempo real', 'success');
+            Logger.info('Stock actualizado vía socket');
+        }
+
+        function handleProductsUpdate(products) {
+            AppState.currentProducts = products;
+            renderProducts(AppState.currentProducts);
+            populateBrandFilter();
+            showNotification('Catálogo actualizado', 'success');
+            Logger.info('Productos actualizados vía socket');
+        }
+
+        function updateConnectionStatus(connected = AppState.isConnected) {
+            const dot = document.getElementById('connectionDot');
+            const text = document.getElementById('connectionText');
+            
+            if (!dot || !text) return;
+            
+            if (connected) {
+                dot.classList.remove('disconnected');
+                text.textContent = 'Conectado';
+                text.setAttribute('aria-label', 'Estado: Conectado al servidor');
+            } else {
+                dot.classList.add('disconnected');
+                text.textContent = 'Desconectado';
+                text.setAttribute('aria-label', 'Estado: Desconectado del servidor');
+            }
+        }
+
+        // API CALLS
+        async function loadProducts() {
+            try {
+                showLoadingState();
+                
+                const response = await fetch(`${CONFIG.API_BASE}/api/products`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const products = await response.json();
+                
+                if (!Array.isArray(products)) {
+                    throw new Error('Formato de datos inválido');
+                }
+                
+                AppState.currentProducts = products;
+                renderProducts(products);
+                populateBrandFilter();
+                
+                Logger.info(`${products.length} productos cargados`);
+                
+            } catch (error) {
+                Logger.error('Error cargando productos:', error);
+                showErrorState('Error cargando productos. Por favor, recarga la página.');
+                throw error;
+            } finally {
+                hideLoadingState();
+            }
+        }
+
+        async function updateStock(updates) {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE}/api/admin/stock`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        password: getAdminPassword(),
+                        updates
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                Logger.info('Stock actualizado correctamente');
+                return result;
+
+            } catch (error) {
+                Logger.error('Error actualizando stock:', error);
+                throw error;
+            }
+        }
+
+        function showErrorState(message) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.innerHTML = `
+                    <div style="text-align: center; color: var(--color-danger);">
+                        <p style="font-size: var(--font-size-lg); margin-bottom: 16px;">⚠️ ${message}</p>
+                        <button class="btn btn-primary" onclick="location.reload()">Recargar página</button>
+                    </div>
+                `;
+            }
+        }
+
+        // EVENT LISTENERS
+        function setupEventListeners() {
+            // Búsqueda y filtros
+            const searchInput = document.getElementById('searchInput');
+            const brandFilter = document.getElementById('brandFilter');
+            const showAllBtn = document.getElementById('showAllBtn');
+            const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', debounce(handleSearch, CONFIG.DEBOUNCE_DELAY));
+                searchInput.addEventListener('keydown', handleSearchKeydown);
+            }
+            
+            if (brandFilter) {
+                brandFilter.addEventListener('change', handleBrandFilter);
+            }
+            
+            if (showAllBtn) {
+                showAllBtn.addEventListener('click', showAllProducts);
+            }
+            
+            if (clearFiltersBtn) {
+                clearFiltersBtn.addEventListener('click', showAllProducts);
+            }
+
+            // Modal producto
+            setupProductModalListeners();
+            
+            // Modal admin
+            setupAdminModalListeners();
+
+            // Atajos de teclado globales
+            document.addEventListener('keydown', handleGlobalKeyDown);
+            
+            // Handle errors globalmente
+            window.addEventListener('error', handleGlobalError);
+            window.addEventListener('unhandledrejection', handleUnhandledRejection);
+            
+            // Resize handler para responsive
+            window.addEventListener('resize', debounce(handleResize, 250));
+        }
+
+        function setupProductModalListeners() {
+            const productModal = document.getElementById('productModal');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            const buyBtn = document.getElementById('buyBtn');
+
+            if (modalCloseBtn) {
+                modalCloseBtn.addEventListener('click', closeProductModal);
+            }
+            
+            if (productModal) {
+                productModal.addEventListener('click', (e) => {
+                    if (e.target === productModal) closeProductModal();
+                });
+            }
+            
+            if (buyBtn) {
+                buyBtn.addEventListener('click', handleBuyClick);
+            }
+        }
+
+        function setupAdminModalListeners() {
+            const adminModal = document.getElementById('adminModal');
+            const adminClose = document.getElementById('adminClose');
+            const saveStock = document.getElementById('saveStock');
+            const cancelAdmin = document.getElementById('cancelAdmin');
+
+            if (adminClose) {
+                adminClose.addEventListener('click', closeAdminModal);
+            }
+            
+            if (saveStock) {
+                saveStock.addEventListener('click', handleSaveStock);
+            }
+            
+            if (cancelAdmin) {
+                cancelAdmin.addEventListener('click', closeAdminModal);
+            }
+            
+            if (adminModal) {
+                adminModal.addEventListener('click', (e) => {
+                    if (e.target === adminModal) closeAdminModal();
+                });
+            }
+        }
+
+        function handleSearchKeydown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const firstProduct = AppState.filteredProducts[0];
+                if (firstProduct) {
+                    openProductModal(firstProduct.id);
+                }
+            }
+        }
+
+        function handleGlobalKeyDown(e) {
+            // Cerrar modales con Escape
+            if (e.key === 'Escape') {
+                if (document.getElementById('productModal')?.classList.contains('active')) {
+                    closeProductModal();
+                }
+                if (document.getElementById('adminModal')?.classList.contains('active')) {
+                    closeAdminModal();
+                }
+            }
+
+            // Abrir panel admin con Shift + A
+            if (e.shiftKey && e.key === 'A') {
+                e.preventDefault();
+                openAdminPanel();
+            }
+            
+            // Búsqueda rápida con Ctrl + F o Cmd + F
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+        }
+
+        function handleGlobalError(event) {
+            Logger.error('Error global capturado:', event.error);
+            showNotification('Ha ocurrido un error inesperado', 'error');
+        }
+
+        function handleUnhandledRejection(event) {
+            Logger.error('Promise rechazada:', event.reason);
+            showNotification('Error en operación asíncrona', 'error');
+        }
+
+        function handleResize() {
+            const modal = document.querySelector('.modal.active');
+            if (modal) {
+                modal.style.alignItems = window.innerHeight < 600 ? 'flex-start' : 'center';
+            }
+        }
+
+        // RENDER PRODUCTOS
+        function renderProducts(products) {
+            const grid = document.getElementById('productsGrid');
+            const noResults = document.getElementById('noResults');
+            
+            if (!grid || !noResults) return;
+            
+            grid.innerHTML = '';
+            
+            if (!products || !products.length) {
+                noResults.style.display = 'block';
+                grid.style.display = 'none';
+                noResults.setAttribute('aria-live', 'polite');
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            grid.style.display = 'grid';
+            
+            const fragment = document.createDocumentFragment();
+            
+            products.forEach(product => {
+                fragment.appendChild(createProductCard(product));
+            });
+            
+            grid.appendChild(fragment);
+            AppState.filteredProducts = products;
+            
+            announceToScreenReader(`Se encontraron ${products.length} productos`);
+        }
+
+        function createProductCard(product) {
+            const card = document.createElement('article');
+            card.className = 'product-card';
+            card.tabIndex = 0;
+            card.setAttribute('role', 'gridcell');
+            card.setAttribute('data-product-id', product.id);
+            
+            const allOut = product.sizes.every(size => size.stock === 0);
+            const availableSizes = product.sizes.filter(size => size.stock > 0);
+            
+            const accessibleDescription = `${product.title} de ${product.brand}, precio ${formatPrice(product.price)}${allOut ? ', agotado' : `, disponible en tallas ${availableSizes.map(s => s.size).join(', ')}`}`;
+            card.setAttribute('aria-label', accessibleDescription);
+
+            const sizesHtml = product.sizes.map(size => {
+                const isOut = size.stock === 0;
+                return `
+                    <span 
+                        class="size-tag${isOut ? ' out' : ''}" 
+                        data-size="${size.size}"
+                        aria-label="Talla ${size.size}${isOut ? ' agotada' : ' disponible'}"
+                        ${isOut ? 'aria-disabled="true"' : ''}
+                    >
+                        ${size.size}${isOut ? '<span class="size-x" aria-hidden="true">✕</span>' : ''}
+                    </span>
+                `;
+            }).join('');
+
+            card.innerHTML = `
+                <div class="product-image">
+                    <img 
+                        class="lazy-image" 
+                        data-src="${product.image_url}" 
+                        alt="${product.title} - ${product.brand}"
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">${escapeHtml(product.title)}</h3>
+                    <p class="product-brand">${escapeHtml(product.brand)}</p>
+                    <div class="product-price" aria-label="Precio: ${formatPrice(product.price)}">${formatPrice(product.price)}</div>
+                    <div class="product-sizes" role="list" aria-label="Tallas disponibles">${sizesHtml}</div>
+                    ${allOut ? 
+                        '<div class="no-stock-label" role="status" aria-live="polite">Agotado en todas las tallas</div>' : 
+                        `<button 
+                            class="btn btn-primary" 
+                            aria-label="Ver detalles de ${product.title}"
+                            data-action="view-details"
+                        >
+                            Ver Detalles
+                        </button>`
+                    }
+                </div>
+            `;
+
+            // Event listeners
+            if (!allOut) {
+                card.addEventListener('click', (e) => {
+                    if (e.target.matches('[data-action="view-details"]')) {
+                        e.stopPropagation();
+                    }
+                    openProductModal(product.id);
+                });
+                
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openProductModal(product.id);
+                    }
+                });
+            } else {
+                card.setAttribute('aria-disabled', 'true');
+                card.style.opacity = '0.7';
+            }
+
+            return card;
+        }
+
+        // BÚSQUEDA Y FILTROS
+        function handleSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const brand = document.getElementById('brandFilter')?.value || '';
+            filterProducts(query, brand);
+        }
+
+        function handleBrandFilter(e) {
+            const brand = e.target.value;
+            const query = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
+            filterProducts(query, brand);
+        }
+
+        function filterProducts(query, brand) {
+            const filtered = AppState.currentProducts.filter(product => {
+                const matchQuery = !query || 
+                    product.title.toLowerCase().includes(query) || 
+                    product.brand.toLowerCase().includes(query) ||
+                    product.sizes.some(size => size.size.toString().includes(query));
+                    
+                const matchBrand = !brand || product.brand === brand;
+                return matchQuery && matchBrand;
+            });
+            
+            renderProducts(filtered);
+            
+            if (query || brand) {
+                Logger.info(`Filtro aplicado: "${query}" | Marca: "${brand}" | Resultados: ${filtered.length}`);
+            }
+        }
+
+        function populateBrandFilter() {
+            const select = document.getElementById('brandFilter');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Todas las marcas</option>';
+            
+            const brands = [...new Set(AppState.currentProducts.map(product => product.brand))]
+                .filter(Boolean)
+                .sort();
+            
+            brands.forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand;
+                option.textContent = brand;
+                select.appendChild(option);
+            });
+            
+            if (currentValue && brands.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        function showAllProducts() {
+            const searchInput = document.getElementById('searchInput');
+            const brandFilter = document.getElementById('brandFilter');
+            
+            if (searchInput) searchInput.value = '';
+            if (brandFilter) brandFilter.value = '';
+            
+            renderProducts(AppState.currentProducts);
+            
+            if (searchInput) searchInput.focus();
+        }
+        
+        // =====================================================
+        // SHOESSTORE APP - PARTE 3/4
+        // MODALES, PANEL ADMIN Y FUNCIONALIDADES PRINCIPALES
+        // =====================================================
+
+       
+    // BÚSQUEDA Y FILTROS
+    function handleSearch(e) {
+        const query = e.target.value.toLowerCase().trim();
+        const brand = document.getElementById('brandFilter')?.value || '';
+        filterProducts(query, brand);
+    }
+
+    function handleBrandFilter(e) {
+        const brand = e.target.value;
+        const query = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
+        filterProducts(query, brand);
+    }
+
+    function filterProducts(query, brand) {
+        const filtered = AppState.currentProducts.filter(product => {
+            const matchQuery = !query || 
+                product.title.toLowerCase().includes(query) || 
+                product.brand.toLowerCase().includes(query) ||
+                product.sizes.some(size => size.size.toString().includes(query));
+                
+            const matchBrand = !brand || product.brand === brand;
+            return matchQuery && matchBrand;
+        });
+        
+        renderProducts(filtered);
+        
+        if (query || brand) {
+            Logger.info(`Filtro aplicado: "${query}" | Marca: "${brand}" | Resultados: ${filtered.length}`);
+        }
+    }
+
+    function populateBrandFilter() {
+        const select = document.getElementById('brandFilter');
+        if (!select) return;
+        
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Todas las marcas</option>';
+        
+        const brands = [...new Set(AppState.currentProducts.map(product => product.brand))]
+            .filter(Boolean)
+            .sort();
+        
+        brands.forEach(brand => {
+            const option = document.createElement('option');
+            option.value = brand;
+            option.textContent = brand;
+            select.appendChild(option);
+        });
+        
+        if (currentValue && brands.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    }
+
+    function showAllProducts() {
+        const searchInput = document.getElementById('searchInput');
+        const brandFilter = document.getElementById('brandFilter');
+        
+        if (searchInput) searchInput.value = '';
+        if (brandFilter) brandFilter.value = '';
+        
+        renderProducts(AppState.currentProducts);
+        
+        if (searchInput) searchInput.focus();
+    }
+
+    // MODAL PRODUCTO
+    function openProductModal(productId) {
+        const product = AppState.currentProducts.find(p => p.id === productId);
+        if (!product) {
+            Logger.warn(`Producto no encontrado: ${productId}`);
+            return;
+        }
+
+        AppState.currentProduct = product;
+        AppState.selectedSize = null;
+
+        const elements = {
+            modal: document.getElementById('productModal'),
+            title: document.getElementById('modalTitle'),
+            productTitle: document.getElementById('modalProductTitle'),
+            brand: document.getElementById('modalBrand'),
+            price: document.getElementById('modalPrice'),
+            image: document.getElementById('modalImage')
+        };
+
+        const missingElements = Object.entries(elements)
+            .filter(([key, element]) => !element)
+            .map(([key]) => key);
+            
+        if (missingElements.length > 0) {
+            Logger.error('Elementos faltantes en modal:', missingElements);
+            return;
+        }
+
+        elements.title.textContent = product.title;
+        elements.productTitle.textContent = product.title;
+        elements.brand.textContent = product.brand;
+        elements.price.textContent = formatPrice(product.price);
+        elements.image.src = product.image_url;
+        elements.image.alt = `${product.title} - ${product.brand}`;
+
+        renderSizeSelector(product.sizes);
+
+        elements.modal.classList.add('active');
+        elements.modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        
+        const closeBtn = document.getElementById('modalCloseBtn');
+        if (closeBtn) {
+            closeBtn.focus();
+        }
+        
+        trapFocus(elements.modal);
+        
+        Logger.info(`Modal abierto para producto: ${product.title}`);
+    }
+
+    function closeProductModal() {
+        const modal = document.getElementById('productModal');
+        if (!modal) return;
+
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        
+        AppState.selectedSize = null;
+        AppState.currentProduct = null;
+        
+        const sizesContainer = document.getElementById('modalSizes');
+        if (sizesContainer) {
+            sizesContainer.innerHTML = '';
+        }
+        
+        updateBuyButton();
+        
+        Logger.info('Modal cerrado');
+    }
+
+    function renderSizeSelector(sizes) {
+        const container = document.getElementById('modalSizes');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        sizes.forEach(size => {
+            const button = document.createElement('button');
+            button.className = 'size-btn' + (size.stock === 0 ? ' disabled' : '');
+            button.type = 'button';
+            button.textContent = size.size;
+            
+            const stockInfo = size.stock === 0 ? ' • Agotado' : ` • ${size.stock} disponibles`;
+            button.setAttribute('aria-label', `Talla ${size.size}${stockInfo}`);
+            button.setAttribute('title', `Talla ${size.size}${stockInfo}`);
+
+            if (size.stock === 0) {
+                button.disabled = true;
+                button.setAttribute('aria-disabled', 'true');
+            } else {
+                button.addEventListener('click', () => selectSize(size.size, button));
+                button.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectSize(size.size, button);
+                    }
+                });
+            }
+
+            container.appendChild(button);
+        });
+
+        updateBuyButton();
+    }
+
+    function selectSize(size, button) {
+        if (!button || button.disabled) return;
+
+        AppState.selectedSize = size;
+        
+        document.querySelectorAll('#modalSizes .size-btn').forEach(btn => {
+            btn.classList.remove('selected');
+            btn.setAttribute('aria-pressed', 'false');
+        });
+        
+        button.classList.add('selected');
+        button.setAttribute('aria-pressed', 'true');
+        
+        updateBuyButton();
+        
+        announceToScreenReader(`Talla ${size} seleccionada`);
+        
+        Logger.info(`Talla seleccionada: ${size}`);
+    }
+
+    function updateBuyButton() {
+        const buyBtn = document.getElementById('buyBtn');
+        if (!buyBtn) return;
+        
+        const canBuy = AppState.currentProduct && 
+                       AppState.selectedSize && 
+                       AppState.currentProduct.sizes.find(s => s.size === AppState.selectedSize)?.stock > 0;
+        
+        buyBtn.disabled = !canBuy;
+        buyBtn.setAttribute('aria-disabled', (!canBuy).toString());
+        
+        if (canBuy) {
+            buyBtn.setAttribute('aria-label', `Comprar ${AppState.currentProduct.title} talla ${AppState.selectedSize} por WhatsApp`);
+        } else {
+            buyBtn.setAttribute('aria-label', 'Selecciona una talla disponible para comprar');
+        }
+    }
+
+    // COMPRA POR WHATSAPP
+    function handleBuyClick() {
+        if (!AppState.currentProduct || !AppState.selectedSize) {
+            showNotification('Selecciona una talla para continuar', 'warning');
+            return;
+        }
+
+        const product = AppState.currentProduct;
+        const selectedSizeObj = product.sizes.find(s => s.size === AppState.selectedSize);
+        
+        if (!selectedSizeObj || selectedSizeObj.stock === 0) {
+            showNotification('La talla seleccionada no está disponible', 'error');
+            return;
+        }
+
+        const message = encodeURIComponent(
+            `¡Hola! Me interesa comprar:\n\n` +
+            `📦 Producto: ${product.title}\n` +
+            `🏷️ Marca: ${product.brand}\n` +
+            `📏 Talla: ${AppState.selectedSize}\n` +
+            `💰 Precio: ${formatPrice(product.price)}\n\n` +
+            `¿Podrías confirmar la disponibilidad y los detalles de envío?`
+        );
+
+        const url = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${message}`;
+        
+        const whatsappWindow = window.open(url, '_blank', 'noopener,noreferrer');
+        
+        if (!whatsappWindow) {
+            window.location.href = url;
+        }
+        
+        Logger.info(`Compra iniciada: ${product.title} - Talla ${AppState.selectedSize}`);
+        
+        setTimeout(() => {
+            closeProductModal();
+            showNotification('¡Gracias por tu interés! Te redirigimos a WhatsApp', 'success');
+        }, 500);
+    }
+
+    // PANEL ADMINISTRADOR
+  // PANEL ADMINISTRADOR - Versión mejorada
+function openAdminPanel() {
+    // Verificar si ya está autenticado
+    let password = sessionStorage.getItem('adminAuth');
+    
+    if (!password) {
+        // Si no está autenticado, pedir contraseña
+        password = prompt("🔐 Ingresa la contraseña de administrador:");
+        
+        if (password === null) return; // Usuario canceló
+        
+        // Guardar en sessionStorage para no pedir otra vez
+        sessionStorage.setItem('adminAuth', password);
+    }
+    
+    // NO almacenar en CONFIG (mantener null por seguridad)
+    // CONFIG.ADMIN_PASSWORD = password; // ← QUITA ESTA LÍNEA
+    
+    // Verificar contraseña haciendo una llamada simple al servidor
+    verifyAdminPassword(password);
+}
+
+// Función auxiliar para obtener la contraseña cuando sea necesaria
+function getAdminPassword() {
+    return sessionStorage.getItem('adminAuth');
+}
+
+// Función para cerrar sesión admin (opcional)
+function adminLogout() {
+    sessionStorage.removeItem('adminAuth');
+    showNotification('Sesión de administrador cerrada', 'info');
+    closeAdminPanel(); // Si tienes esta función
+}
+
+
+async function verifyAdminPassword(password) {
+    try {
+        const response = await fetch(`${CONFIG.API_BASE}/api/admin/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                password: password
+            })
+        });
+        
+        if (response.ok) {
+            showNotification('Acceso autorizado', 'success');
+            
+            // MOSTRAR EL MODAL (esto faltaba):
+            const modal = document.getElementById('adminModal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            
+            // Renderizar el contenido
+            renderAdminPanel();
+            
+        } else {
+            sessionStorage.removeItem('adminAuth');
+            showNotification('Contraseña incorrecta', 'error');
+        }
+        
+    } catch (error) {
+        sessionStorage.removeItem('adminAuth');
+        showNotification('Error de conexión', 'error');
+    }
+}
+
+   // =====================================================
+// PANEL ADMIN AVANZADO - PARTE 1/5
+// REEMPLAZA TU FUNCIÓN renderAdminPanel() ACTUAL CON ESTA VERSIÓN COMPLETA
+// =====================================================
+
+function renderAdminPanel() {
+    const form = document.getElementById('adminForm');
+    if (!form) return;
+
+    form.innerHTML = '';
+
+    // Crear pestañas para organizar mejor
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'admin-tabs';
+    tabsContainer.innerHTML = `
+        <div class="tab-buttons">
+            <button type="button" class="tab-btn active" data-tab="stock">
+                <span class="btn-icon">📦</span> Gestionar Stock
+            </button>
+            <button type="button" class="tab-btn" data-tab="products">
+                <span class="btn-icon">➕</span> Agregar Producto
+            </button>
+        </div>
+        <div class="tab-content">
+            <div id="stockTab" class="tab-panel active"></div>
+            <div id="productsTab" class="tab-panel"></div>
+        </div>
+    `;
+
+    form.appendChild(tabsContainer);
+
+    // Renderizar contenido de cada pestaña
+    renderStockTab();
+    renderProductsTab();
+    
+    // Configurar event listeners para pestañas
+    setupTabListeners();
+}
+
+function renderStockTab() {
+    const stockTab = document.getElementById('stockTab');
+    if (!stockTab) return;
+
+    if (!AppState.currentProducts.length) {
+        stockTab.innerHTML = '<p style="text-align: center; color: var(--color-gray);">No hay productos para administrar</p>';
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    AppState.currentProducts.forEach(product => {
+        const productDiv = document.createElement('div');
+        productDiv.className = 'admin-product';
+        
+        productDiv.innerHTML = `
+            <div class="product-header">
+                <div>
+                    <h3>${escapeHtml(product.title)}</h3>
+                    <p style="color:var(--color-gray);margin-bottom:12px">${escapeHtml(product.brand)} - S/ ${product.price}</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-outline btn-sm manage-sizes" data-product-id="${product.id}">
+                        <span class="btn-icon">📏</span> Gestionar Tallas
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm delete-product" data-product-id="${product.id}">
+                        <span class="btn-icon">🗑️</span> Eliminar
+                    </button>
+                </div>
+            </div>
+            <div class="admin-sizes">
+                ${product.sizes.map(size => `
+                    <div class="admin-size">
+                        <label for="stock_${product.id}_${size.size}">
+                            Talla ${size.size}
+                        </label>
+                        <input 
+                            type="number" 
+                            id="stock_${product.id}_${size.size}"
+                            min="0" 
+                            max="999"
+                            value="${size.stock}"
+                            data-product-id="${product.id}"
+                            data-size="${size.size}"
+                            data-original-value="${size.stock}"
+                            aria-describedby="help_${product.id}_${size.size}"
+                        >
+                        <div id="help_${product.id}_${size.size}" class="visually-hidden">
+                            Stock actual: ${size.stock} unidades
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        fragment.appendChild(productDiv);
+    });
+    
+    stockTab.appendChild(fragment);
+    
+    // Agregar listeners para cambios, eliminación y gestión de tallas
+    stockTab.addEventListener('input', handleStockInputChange);
+    stockTab.addEventListener('click', handleAdminStockActions);
+}
+
+// Función unificada para manejar acciones del panel admin
+function handleAdminStockActions(e) {
+    if (e.target.classList.contains('delete-product')) {
+        handleProductDelete(e);
+    } else if (e.target.classList.contains('manage-sizes')) {
+        handleManageSizes(e);
+    }
+}
+
+// Nueva función para gestionar tallas
+function handleManageSizes(e) {
+    const productId = parseInt(e.target.dataset.productId);
+    const product = AppState.currentProducts.find(p => p.id === productId);
+    
+    if (!product) {
+        showNotification('Producto no encontrado', 'error');
+        return;
+    }
+    
+    openSizeManagerModal(product);
+}
+
+
+    function handleStockInputChange(e) {
+        if (e.target.type === 'number') {
+            const input = e.target;
+            const originalValue = parseInt(input.dataset.originalValue);
+            const currentValue = parseInt(input.value) || 0;
+            
+            if (currentValue < 0) {
+                input.value = 0;
+                return;
+            }
+            
+            if (currentValue > 999) {
+                input.value = 999;
+                return;
+            }
+            
+            if (currentValue !== originalValue) {
+                input.style.borderColor = 'var(--color-warning)';
+                input.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+                input.setAttribute('data-changed', 'true');
+            } else {
+                input.style.borderColor = '';
+                input.style.backgroundColor = '';
+                input.removeAttribute('data-changed');
+            }
+            
+            updateChangesCounter();
+        }
+    }
+
+    function updateChangesCounter() {
+        const changedInputs = document.querySelectorAll('#adminForm input[data-changed="true"]');
+        const saveBtn = document.getElementById('saveStock');
+        
+        if (saveBtn) {
+            const count = changedInputs.length;
+            if (count > 0) {
+                saveBtn.innerHTML = `<span class="btn-icon" aria-hidden="true">💾</span> Guardar ${count} cambio${count > 1 ? 's' : ''}`;
+                saveBtn.classList.add('has-changes');
+            } else {
+                saveBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">💾</span> Guardar Cambios';
+                saveBtn.classList.remove('has-changes');
+            }
+        }
+    }
+// REEMPLAZA TU FUNCIÓN handleSaveStock ACTUAL CON ESTA VERSIÓN:
+async function handleSaveStock() {
+    try {
+       const inputs = document.querySelectorAll('#stockTab input[type="number"]'); // CAMBIO: #stockTab en lugar de #adminForm
+        const updates = [];
+        let hasChanges = false;
+
+        console.log('Total inputs encontrados:', inputs.length);
+
+        Array.from(inputs).forEach((input, index) => {
+            console.log(`Input ${index}:`, {
+                id: input.id,
+                value: input.value,
+                datasets: input.dataset,
+                productId: input.dataset.productId,
+                size: input.dataset.size,
+                originalValue: input.dataset.originalValue
+            });
+
+            const productId = parseInt(input.dataset.productId);
+            const size = input.dataset.size;
+            const stock = parseInt(input.value) || 0;
+            const originalValue = parseInt(input.dataset.originalValue || 0);
+            
+            if (isNaN(productId) || !size || size === 'undefined') {
+                console.error('Datos inválidos en input:', { productId, size, stock, input: input.outerHTML });
+                return;
+            }
+            
+            if (stock !== originalValue) {
+                hasChanges = true;
+            }
+            
+            updates.push({
+                productId,
+                size,
+                stock
+            });
+        });
+
+        console.log('Updates preparados:', updates);
+
+        if (updates.length === 0) {
+            showNotification('No se encontraron datos válidos para actualizar', 'warning');
+            return;
+        }
+
+        if (!hasChanges) {
+            showNotification('No hay cambios para guardar', 'warning');
+            return;
+        }
+
+        const saveBtn = document.getElementById('saveStock');
+        const cancelBtn = document.getElementById('cancelAdmin');
+        
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border:2px solid #f3f3f3;border-top:2px solid #333;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;margin-right:8px;"></span> Guardando...';
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+        }
+
+        inputs.forEach(input => {
+            input.disabled = true;
+        });
+
+        showNotification('Actualizando stock...', 'info');
+        
+        await updateStock(updates);
+        
+        inputs.forEach(input => {
+            input.dataset.originalValue = input.value;
+            input.style.borderColor = '';
+            input.style.backgroundColor = '';
+            input.removeAttribute('data-changed');
+        });
+        
+        closeAdminModal();
+        showNotification(`Stock actualizado: ${updates.length} cambios aplicados`, 'success');
+        
+        Logger.info(`Stock actualizado: ${updates.length} cambios aplicados`);
+
+    } catch (error) {
+        Logger.error('Error guardando stock:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    } finally {
+        const saveBtn = document.getElementById('saveStock');
+        const cancelBtn = document.getElementById('cancelAdmin');
+        const inputs = document.querySelectorAll('#stockTab input[type="number"]'); // CAMBIO: #stockTab
+        
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">💾</span> Guardar Cambios';
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.disabled = false;
+        }
+        
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+    }
+}
+
+ function closeAdminModal() {
+    const modal = document.getElementById('adminModal');
+    if (!modal) return;
+
+    const hasUnsavedChanges = document.querySelectorAll('#stockTab input[data-changed="true"]').length > 0; // CAMBIO: #stockTab
+    
+    if (hasUnsavedChanges) {
+        const confirmed = confirm('Hay cambios sin guardar. ¿Estás seguro de cerrar?');
+        if (!confirmed) return;
+    }
+
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    
+    const form = document.getElementById('adminForm');
+    if (form) {
+        form.innerHTML = '';
+    }
+
+    // SEGURIDAD: Limpiar contraseña de memoria al cerrar
+   sessionStorage.removeItem('adminAuth');
+    
+    Logger.info('Panel admin cerrado');
+}
+    // =====================================================
+        // SHOESSTORE APP - PARTE 4/4
+        // UTILIDADES, LAZY LOADING, NOTIFICACIONES Y CIERRE
+        // =====================================================
+
+        // ACTUALIZACIÓN EN TIEMPO REAL
+        function updateProductsDisplay() {
+            const currentQuery = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
+            const currentBrand = document.getElementById('brandFilter')?.value || '';
+            
+            if (!currentQuery && !currentBrand) {
+                renderProducts(AppState.currentProducts);
+            } else {
+                filterProducts(currentQuery, currentBrand);
+            }
+
+            if (AppState.currentProduct && document.getElementById('productModal')?.classList.contains('active')) {
+                const updatedProduct = AppState.currentProducts.find(p => p.id === AppState.currentProduct.id);
+                if (updatedProduct) {
+                    AppState.currentProduct = updatedProduct;
+                    
+                    const priceElement = document.getElementById('modalPrice');
+                    if (priceElement) {
+                        priceElement.textContent = formatPrice(updatedProduct.price);
+                    }
+                    
+                    renderSizeSelector(updatedProduct.sizes);
+                    
+                    if (AppState.selectedSize) {
+                        const selectedSizeObj = updatedProduct.sizes.find(s => s.size === AppState.selectedSize);
+                        if (!selectedSizeObj || selectedSizeObj.stock === 0) {
+                            AppState.selectedSize = null;
+                            updateBuyButton();
+                            announceToScreenReader('La talla seleccionada ya no está disponible');
+                            showNotification('La talla seleccionada se agotó', 'warning');
+                        }
+                    }
+                } else {
+                    closeProductModal();
+                    showNotification('El producto ya no está disponible', 'info');
+                }
+            }
+        }
+
+        // NOTIFICACIONES MEJORADAS
+        let notificationQueue = [];
+        let isShowingNotification = false;
+
+        function showNotification(message, type = 'info', duration = CONFIG.NOTIFICATION_DURATION) {
+            if (isShowingNotification) {
+                notificationQueue.push({ message, type, duration });
+                return;
+            }
+
+            const notification = document.getElementById('notification');
+            if (!notification) return;
+
+            isShowingNotification = true;
+
+            notification.className = 'notification';
+            notification.textContent = message;
+            notification.classList.add(type, 'show');
+            
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            
+            if (icons[type]) {
+                notification.textContent = `${icons[type]} ${message}`;
+            }
+            
+            const timeoutId = setTimeout(() => {
+                hideNotification();
+            }, duration);
+            
+            const closeHandler = () => {
+                clearTimeout(timeoutId);
+                hideNotification();
+            };
+            
+            notification.addEventListener('click', closeHandler, { once: true });
+            
+            const keyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    clearTimeout(timeoutId);
+                    hideNotification();
+                    document.removeEventListener('keydown', keyHandler);
+                }
+            };
+            
+            document.addEventListener('keydown', keyHandler);
+            announceToScreenReader(message);
+            Logger.info(`Notificación [${type}]: ${message}`);
+        }
+
+        function hideNotification() {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.classList.remove('show');
+            }
+            
+            isShowingNotification = false;
+            
+            if (notificationQueue.length > 0) {
+                const next = notificationQueue.shift();
+                setTimeout(() => {
+                    showNotification(next.message, next.type, next.duration);
+                }, 300);
+            }
+        }
+
+        // LAZY LOADING DE IMÁGENES
+        function setupLazyLoading() {
+            if ('IntersectionObserver' in window) {
+                AppState.observers.image = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            loadImage(img);
+                            AppState.observers.image.unobserve(img);
+                        }
+                    });
+                }, {
+                    rootMargin: CONFIG.LAZY_LOADING_THRESHOLD
+                });
+
+                AppState.observers.grid = new MutationObserver(() => {
+                    observeLazyImages();
+                });
+
+                observeLazyImages();
+                
+                const productsGrid = document.getElementById('productsGrid');
+                if (productsGrid) {
+                    AppState.observers.grid.observe(productsGrid, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+
+            } else {
+                loadAllImages();
+            }
+        }
+
+        function observeLazyImages() {
+            if (!AppState.observers.image) return;
+            
+            document.querySelectorAll('.lazy-image:not([src])').forEach(img => {
+                AppState.observers.image.observe(img);
+            });
+        }
+
+        function loadImage(img) {
+            const src = img.dataset.src;
+            if (!src) return;
+
+            const tempImg = new Image();
+            
+            tempImg.onload = () => {
+                img.src = src;
+                img.classList.remove('lazy-image');
+                img.classList.add('loaded');
+            };
+            
+            tempImg.onerror = () => {
+                img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlbiBubyBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==';
+                img.classList.remove('lazy-image');
+                img.classList.add('error');
+                Logger.warn(`Error cargando imagen: ${src}`);
+            };
+            
+            tempImg.src = src;
+        }
+
+        function loadAllImages() {
+            document.querySelectorAll('.lazy-image').forEach(loadImage);
+        }
+
+        // ACCESIBILIDAD
+        function setupAccessibility() {
+            updateAriaLabels();
+            addSkipLinks();
+            setupScreenReaderAnnouncements();
+        }
+
+        function updateAriaLabels() {
+            const grid = document.getElementById('productsGrid');
+            if (grid) {
+                const productCount = grid.children.length;
+                grid.setAttribute('aria-label', `Catálogo con ${productCount} productos`);
+            }
+        }
+
+        function addSkipLinks() {
+            const skipLink = document.createElement('a');
+            skipLink.href = '#products';
+            skipLink.textContent = 'Ir al contenido principal';
+            skipLink.className = 'skip-link';
+            skipLink.style.cssText = `
+                position: absolute;
+                top: -40px;
+                left: 6px;
+                background: var(--color-primary);
+                color: white;
+                padding: 8px;
+                text-decoration: none;
+                border-radius: 4px;
+                z-index: 1000;
+                transition: top 0.3s;
+            `;
+            
+            skipLink.addEventListener('focus', () => {
+                skipLink.style.top = '6px';
+            });
+            
+            skipLink.addEventListener('blur', () => {
+                skipLink.style.top = '-40px';
+            });
+            
+            document.body.insertBefore(skipLink, document.body.firstChild);
+        }
+
+        function setupScreenReaderAnnouncements() {
+            const liveRegion = document.createElement('div');
+            liveRegion.id = 'live-region';
+            liveRegion.setAttribute('aria-live', 'polite');
+            liveRegion.setAttribute('aria-atomic', 'true');
+            liveRegion.className = 'visually-hidden';
+            document.body.appendChild(liveRegion);
+        }
+
+        function announceToScreenReader(message) {
+            const liveRegion = document.getElementById('live-region');
+            if (liveRegion) {
+                liveRegion.textContent = '';
+                
+                setTimeout(() => {
+                    liveRegion.textContent = message;
+                }, 50);
+                
+                setTimeout(() => {
+                    liveRegion.textContent = '';
+                }, 1000);
+            }
+        }
+
+        function trapFocus(element) {
+            const focusableElements = element.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            
+            if (focusableElements.length === 0) return;
+            
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            
+            element.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstElement) {
+                            e.preventDefault();
+                            lastElement.focus();
+                        }
+                    } else {
+                        if (document.activeElement === lastElement) {
+                            e.preventDefault();
+                            firstElement.focus();
+                        }
+                    }
+                }
+            });
+        }
+
+        // UTILIDADES
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func.apply(this, args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function formatPrice(price) {
+            let numPrice = typeof price === 'string' ? parseFloat(price) : price;
+            
+            if (typeof numPrice !== 'number' || isNaN(numPrice) || numPrice < 0) {
+                Logger.warn('Precio inválido recibido:', price);
+                return 'Precio no disponible';
+            }
+            
+            try {
+                return new Intl.NumberFormat('es-PE', {
+                    style: 'currency',
+                    currency: 'PEN',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(numPrice);
+            } catch (error) {
+                Logger.error('Error formateando precio:', error);
+                return `S/ ${numPrice.toFixed(2)}`;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function validateProductData(product) {
+            if (!product || typeof product !== 'object') {
+                Logger.warn('Producto inválido:', product);
+                return false;
+            }
+            
+            const required = ['id', 'title', 'brand', 'price', 'image_url', 'sizes'];
+            const hasRequired = required.every(field => {
+                const hasField = product.hasOwnProperty(field);
+                if (!hasField) {
+                    Logger.warn(`Campo faltante en producto ${product.id || 'unknown'}:`, field);
+                }
+                return hasField;
+            });
+            
+            if (!hasRequired) return false;
+            
+            const price = parseFloat(product.price);
+            if (isNaN(price) || price < 0) {
+                Logger.warn(`Precio inválido en producto ${product.id}:`, product.price);
+                return false;
+            }
+            
+            if (!Array.isArray(product.sizes) || product.sizes.length === 0) {
+                Logger.warn(`Sizes inválidas en producto ${product.id}:`, product.sizes);
+                return false;
+            }
+            
+            const validSizes = product.sizes.every(size => {
+                const valid = size.hasOwnProperty('size') && 
+                             size.hasOwnProperty('stock') && 
+                             typeof size.stock === 'number' && 
+                             size.stock >= 0;
+                
+                if (!valid) {
+                    Logger.warn(`Size inválida en producto ${product.id}:`, size);
+                }
+                
+                return valid;
+            });
+            
+            return validSizes;
+        }
+
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') return '';
+            
+            return input
+                .trim()
+                .replace(/[<>]/g, '')
+                .substring(0, 100);
+        }
+
+        // LOGGER SYSTEM
+        const Logger = {
+            info: (message, ...args) => {
+                if (console && console.info) {
+                    console.info(`[ShoesStore] ${message}`, ...args);
+                }
+            },
+            
+            warn: (message, ...args) => {
+                if (console && console.warn) {
+                    console.warn(`[ShoesStore] ${message}`, ...args);
+                }
+            },
+            
+            error: (message, ...args) => {
+                if (console && console.error) {
+                    console.error(`[ShoesStore] ${message}`, ...args);
+                }
+            },
+            
+            debug: (message, ...args) => {
+                if (console && console.debug && window.location.hostname === 'localhost') {
+                    console.debug(`[ShoesStore] ${message}`, ...args);
+                }
+            }
+        };
+
+        // PERFORMANCE MONITORING
+        const Performance = {
+            marks: new Map(),
+            
+            mark: (name) => {
+                if ('performance' in window && performance.mark) {
+                    performance.mark(name);
+                    Performance.marks.set(name, Date.now());
+                }
+            },
+            
+            measure: (name, startMark, endMark) => {
+                if ('performance' in window && performance.measure) {
+                    try {
+                        performance.measure(name, startMark, endMark);
+                        const measure = performance.getEntriesByName(name, 'measure')[0];
+                        Logger.debug(`Performance: ${name} took ${measure.duration.toFixed(2)}ms`);
+                        return measure.duration;
+                    } catch (e) {
+                        Logger.warn('Error measuring performance:', e);
+                    }
+                }
+                return null;
+            },
+            
+            getMetrics: () => {
+                if ('performance' in window) {
+                    return {
+                        navigation: performance.getEntriesByType('navigation')[0],
+                        marks: Array.from(Performance.marks.entries()),
+                        memory: performance.memory ? {
+                            used: performance.memory.usedJSHeapSize,
+                            total: performance.memory.totalJSHeapSize,
+                            limit: performance.memory.jsHeapSizeLimit
+                        } : null
+                    };
+                }
+                return null;
+            }
+        };
+
+        // ERROR RECOVERY
+        const ErrorRecovery = {
+            retryCount: 0,
+            maxRetries: 3,
+            
+            async retryOperation(operation, context = 'operación') {
+                for (let i = 0; i <= ErrorRecovery.maxRetries; i++) {
+                    try {
+                        return await operation();
+                    } catch (error) {
+                        Logger.warn(`Intento ${i + 1}/${ErrorRecovery.maxRetries + 1} fallido para ${context}:`, error);
+                        
+                        if (i === ErrorRecovery.maxRetries) {
+                            throw new Error(`${context} falló después de ${ErrorRecovery.maxRetries + 1} intentos: ${error.message}`);
+                        }
+                        
+                        await ErrorRecovery.delay(Math.pow(2, i) * 1000);
+                    }
+                }
+            },
+            
+            delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+            
+            recover: async () => {
+                Logger.info('Iniciando recuperación automática...');
+                
+                try {
+                    if (!AppState.isConnected && AppState.socket) {
+                        AppState.socket.connect();
+                    }
+                    
+                    if (AppState.currentProducts.length === 0) {
+                        await ErrorRecovery.retryOperation(loadProducts, 'carga de productos');
+                    }
+                    
+                    showNotification('Conexión restaurada', 'success');
+                    Logger.info('Recuperación completada exitosamente');
+                    
+                } catch (error) {
+                    Logger.error('Error en recuperación automática:', error);
+                    showNotification('Error de conexión. Recarga la página', 'error');
+                }
+            }
+        };
+
+        // OFFLINE/ONLINE DETECTION
+        window.addEventListener('online', () => {
+            Logger.info('Conexión restaurada');
+            showNotification('Conexión a internet restaurada', 'success');
+            ErrorRecovery.recover();
+        });
+
+        window.addEventListener('offline', () => {
+            Logger.warn('Conexión perdida');
+            showNotification('Sin conexión a internet', 'warning');
+        });
+
+        // GLOBAL ERROR HANDLING
+        window.addEventListener('unhandledrejection', (event) => {
+            Logger.error('Unhandled promise rejection:', event.reason);
+            
+            if (event.reason && event.reason.message && event.reason.message.includes('fetch')) {
+                setTimeout(() => ErrorRecovery.recover(), 2000);
+            }
+        });
+
+        // Prevenir errores de consola en producción
+        if (window.location.hostname !== 'localhost') {
+            console.warn = () => {};
+            console.error = () => {};
+        }
+
+        // INICIALIZACIÓN FINAL
+        Logger.info('🚀 ShoesStore App cargada y lista');
+        Logger.info(`Versión: ${document.querySelector('meta[name="version"]')?.content || '1.0.0'}`);
+        Logger.info(`Entorno: ${window.location.hostname === 'localhost' ? 'desarrollo' : 'producción'}`);
+
+        // Exponer funciones para debugging en desarrollo
+        if (window.location.hostname === 'localhost') {
+            window.ShoesStore = {
+                state: AppState,
+                logger: Logger,
+                performance: Performance,
+                recovery: ErrorRecovery,
+                openProduct: openProductModal,
+                openAdmin: openAdminPanel
+            };
+        }
+// =====================================================
+// PANEL ADMIN AVANZADO - PARTE 2/5
+// MODAL PARA GESTIONAR TALLAS
+// =====================================================
+
+// Modal para gestionar tallas
+function openSizeManagerModal(product) {
+    // Crear modal dinámicamente
+    const modalHtml = `
+        <div id="sizeManagerModal" class="modal active" role="dialog" aria-modal="true" aria-labelledby="sizeManagerTitle">
+            <div class="modal-content" style="max-width: 600px;">
+                <header class="modal-header">
+                    <h2 id="sizeManagerTitle">Gestionar Tallas - ${escapeHtml(product.title)}</h2>
+                    <button id="closeSizeManager" class="modal-close" type="button" aria-label="Cerrar gestor de tallas">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </header>
+                
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="color: var(--color-primary); margin-bottom: 12px;">Tallas Actuales</h3>
+                        <div id="currentSizesList" class="size-grid">
+                            ${product.sizes.map(size => `
+                                <div class="size-item" style="display: grid; grid-template-columns: 1fr 1fr 40px; gap: 12px; align-items: center; padding: 8px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 8px;">
+                                    <span class="size-number" style="text-align: center; font-weight: 600;">Talla ${size.size}</span>
+                                    <span class="size-stock" style="text-align: center;">Stock: ${size.stock}</span>
+                                    <button type="button" class="remove-size" data-product-id="${product.id}" data-size="${size.size}" title="Eliminar talla ${size.size}" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">✕</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid #eee; padding-top: 20px;">
+                        <h3 style="color: var(--color-primary); margin-bottom: 12px;">Agregar Nueva Talla</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end;">
+                            <div class="form-group">
+                                <label for="newSizeNumber">Número de Talla</label>
+                                <input type="text" id="newSizeNumber" placeholder="36" maxlength="3" style="text-align: center;">
+                            </div>
+                            <div class="form-group">
+                                <label for="newSizeStock">Stock Inicial</label>
+                                <input type="number" id="newSizeStock" placeholder="0" min="0" max="999" value="0">
+                            </div>
+                            <button type="button" id="addNewSize" class="btn btn-secondary" data-product-id="${product.id}">
+                                <span class="btn-icon">➕</span> Agregar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: var(--color-primary); margin-bottom: 8px;">💡 Tallas Sugeridas</h4>
+                        <p style="font-size: 14px; color: #6c757d; margin-bottom: 12px;">Tallas comunes que podrías necesitar:</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${['36', '37', '38', '39', '40', '41', '42', '43'].map(size => {
+                                const exists = product.sizes.some(s => s.size === size);
+                                return exists ? '' : `
+                                    <button type="button" class="btn btn-outline btn-sm quick-add-size" 
+                                            data-product-id="${product.id}" data-size="${size}" 
+                                            style="min-height: 32px; padding: 4px 8px; font-size: 12px;">
+                                        ${size}
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <footer class="modal-footer">
+                    <button id="closeSizeManagerFooter" class="btn btn-outline" type="button">Cerrar</button>
+                </footer>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.body.style.overflow = 'hidden';
+    
+    // Configurar event listeners del modal
+    setupSizeManagerListeners(product);
+    
+    // Focus en el primer input
+    const firstInput = document.getElementById('newSizeNumber');
+    if (firstInput) {
+        firstInput.focus();
+    }
+}
+
+function setupSizeManagerListeners(product) {
+    const modal = document.getElementById('sizeManagerModal');
+    if (!modal) return;
+    
+    // Cerrar modal
+    const closeButtons = modal.querySelectorAll('#closeSizeManager, #closeSizeManagerFooter');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', closeSizeManagerModal);
+    });
+    
+    // Cerrar con click en fondo
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeSizeManagerModal();
+        }
+    });
+    
+    // Cerrar con Escape
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeSizeManagerModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Agregar nueva talla
+    const addBtn = document.getElementById('addNewSize');
+    if (addBtn) {
+        addBtn.addEventListener('click', handleAddNewSize);
+    }
+    
+    // Agregar talla rápida
+    modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('quick-add-size')) {
+            const size = e.target.dataset.size;
+            const productId = parseInt(e.target.dataset.productId);
+            addSizeToProduct(productId, size, 0);
+        }
+    });
+    
+    // Eliminar talla
+    modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-size')) {
+            const productId = parseInt(e.target.dataset.productId);
+            const size = e.target.dataset.size;
+            
+            if (product.sizes.length <= 1) {
+                showNotification('No se puede eliminar la última talla del producto', 'warning');
+                return;
+            }
+            
+            const confirmed = confirm(`¿Eliminar la talla ${size}?`);
+            if (confirmed) {
+                removeSizeFromProduct(productId, size);
+            }
+        }
+    });
+    
+    // Enter para agregar talla
+    const newSizeInput = document.getElementById('newSizeNumber');
+    if (newSizeInput) {
+        newSizeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddNewSize();
+            }
+        });
+    }
+}
+
+function closeSizeManagerModal() {
+    const modal = document.getElementById('sizeManagerModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+async function handleAddNewSize() {
+    const sizeInput = document.getElementById('newSizeNumber');
+    const stockInput = document.getElementById('newSizeStock');
+    const addBtn = document.getElementById('addNewSize');
+    
+    if (!sizeInput || !stockInput || !addBtn) return;
+    
+    const size = sizeInput.value.trim();
+    const stock = parseInt(stockInput.value) || 0;
+    const productId = parseInt(addBtn.dataset.productId);
+    
+    if (!size) {
+        showNotification('Ingresa el número de talla', 'warning');
+        sizeInput.focus();
+        return;
+    }
+    
+    if (stock < 0) {
+        showNotification('El stock no puede ser negativo', 'warning');
+        stockInput.focus();
+        return;
+    }
+    
+    // Verificar que la talla no existe
+    const product = AppState.currentProducts.find(p => p.id === productId);
+    if (product && product.sizes.some(s => s.size === size)) {
+        showNotification(`La talla ${size} ya existe`, 'warning');
+        sizeInput.focus();
+        return;
+    }
+    
+    await addSizeToProduct(productId, size, stock);
+    
+    // Limpiar inputs
+    sizeInput.value = '';
+    stockInput.value = '0';
+    sizeInput.focus();
+}
+    
+// =====================================================
+// PANEL ADMIN AVANZADO - PARTE 3/5
+// FUNCIONES PARA INTERACTUAR CON EL BACKEND - TALLAS
+// =====================================================
+
+// Funciones para interactuar con el backend
+async function addSizeToProduct(productId, size, stock) {
+    try {
+        showNotification('Agregando talla...', 'info');
+        
+        const response = await fetch(`${CONFIG.API_BASE}/api/admin/products/${productId}/sizes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                password: getAdminPassword(),
+                size: size,
+                stock: stock
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        showNotification(`Talla ${size} agregada exitosamente`, 'success');
+        
+        // El socket.io ya actualizará los productos automáticamente
+        Logger.info('Talla agregada:', result);
+        
+        // Actualizar el modal
+        setTimeout(() => {
+            closeSizeManagerModal();
+            const product = AppState.currentProducts.find(p => p.id === productId);
+            if (product) {
+                openSizeManagerModal(product);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        Logger.error('Error agregando talla:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function removeSizeFromProduct(productId, size) {
+    try {
+        showNotification('Eliminando talla...', 'info');
+        
+        const response = await fetch(`${CONFIG.API_BASE}/api/admin/products/${productId}/sizes/${size}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                password: getAdminPassword()
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        showNotification(`Talla ${size} eliminada exitosamente`, 'success');
+        
+        Logger.info('Talla eliminada:', result);
+        
+        // Actualizar el modal
+        setTimeout(() => {
+            closeSizeManagerModal();
+            const product = AppState.currentProducts.find(p => p.id === productId);
+            if (product) {
+                openSizeManagerModal(product);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        Logger.error('Error eliminando talla:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function handleProductDelete(e) {
+    if (!e.target.classList.contains('delete-product')) return;
+    
+    const productId = parseInt(e.target.dataset.productId);
+    const product = AppState.currentProducts.find(p => p.id === productId);
+    
+    if (!product) return;
+
+    const confirmed = confirm(`¿Estás seguro de eliminar "${product.title}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmed) return;
+
+    try {
+        e.target.disabled = true;
+        e.target.innerHTML = '<span class="spinner" style="width:12px;height:12px;border:2px solid #f3f3f3;border-top:2px solid #333;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;"></span>';
+        
+        await deleteProduct(productId);
+        
+        showNotification(`Producto "${product.title}" eliminado correctamente`, 'success');
+        
+    } catch (error) {
+        Logger.error('Error eliminando producto:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function deleteProduct(productId) {
+    const response = await fetch(`${CONFIG.API_BASE}/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+           password: getAdminPassword()
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+function renderProductsTab() {
+    const productsTab = document.getElementById('productsTab');
+    if (!productsTab) return;
+
+    productsTab.innerHTML = `
+        <div class="add-product-form">
+            <h3 style="margin-bottom: 20px; color: var(--color-primary);">
+                <span class="btn-icon">➕</span> Agregar Nuevo Producto
+            </h3>
+            
+            <div class="form-grid" style="display: grid; gap: 16px;">
+                <div class="form-group">
+                    <label for="newProductTitle">Título del Producto *</label>
+                    <input 
+                        type="text" 
+                        id="newProductTitle" 
+                        placeholder="Ej: Zapato Boni urbanos color azul"
+                        maxlength="255"
+                        required
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newProductBrand">Marca *</label>
+                    <input 
+                        type="text" 
+                        id="newProductBrand" 
+                        placeholder="Ej: Boni"
+                        maxlength="100"
+                        required
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newProductPrice">Precio (S/) *</label>
+                    <input 
+                        type="number" 
+                        id="newProductPrice" 
+                        step="0.01"
+                        min="0"
+                        max="9999.99"
+                        placeholder="74.99"
+                        required
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="newProductImage">URL de Imagen *</label>
+                    <input 
+                        type="url" 
+                        id="newProductImage" 
+                        placeholder="/imagenes/imagen4.jpeg o https://..."
+                        maxlength="500"
+                        required
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                    >
+                    <small style="color: var(--color-gray);">
+                        Puedes usar rutas locales (/imagenes/...) o URLs externas
+                    </small>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Tallas y Stock Inicial</label>
+                    <div class="sizes-input">
+                        <div class="size-grid" id="newProductSizes">
+                            <div class="size-item" style="display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+                                <input type="text" placeholder="36" class="size-number" maxlength="3" style="text-align: center; padding: 4px;">
+                                <input type="number" placeholder="0" class="size-stock" min="0" max="999" style="padding: 4px;">
+                                <button type="button" class="remove-size" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">✕</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addSizeBtn" class="btn btn-outline btn-sm" style="margin-top: 8px;">
+                            <span class="btn-icon">➕</span> Agregar Talla
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 20px; display: flex; gap: 12px;">
+                <button type="button" id="saveNewProduct" class="btn btn-secondary">
+                    <span class="btn-icon">💾</span> Crear Producto
+                </button>
+                <button type="button" id="clearForm" class="btn btn-outline">
+                    <span class="btn-icon">🗑️</span> Limpiar Formulario
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Configurar event listeners para el formulario
+    setupProductFormListeners();
+}
+
+function setupTabListeners() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+            
+            // Actualizar botones activos
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Actualizar paneles activos
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            document.getElementById(targetTab + 'Tab').classList.add('active');
+        });
+    });
+}
+// =====================================================
+// PANEL ADMIN AVANZADO - PARTE 4/5
+// FORMULARIO DE PRODUCTOS Y VALIDACIONES
+// =====================================================
+
+function setupProductFormListeners() {
+    // Agregar talla
+    const addSizeBtn = document.getElementById('addSizeBtn');
+    if (addSizeBtn) {
+        addSizeBtn.addEventListener('click', addNewSizeInput);
+    }
+
+    // Guardar producto
+    const saveBtn = document.getElementById('saveNewProduct');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', handleSaveNewProduct);
+    }
+
+    // Limpiar formulario
+    const clearBtn = document.getElementById('clearForm');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearProductForm);
+    }
+
+    // Eliminar tallas
+    const sizesContainer = document.getElementById('newProductSizes');
+    if (sizesContainer) {
+        sizesContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-size')) {
+                const sizeItem = e.target.closest('.size-item');
+                if (document.querySelectorAll('.size-item').length > 1) {
+                    sizeItem.remove();
+                } else {
+                    showNotification('Debe haber al menos una talla', 'warning');
+                }
+            }
+        });
+    }
+
+    // Validación en tiempo real
+    const requiredInputs = document.querySelectorAll('#productsTab input[required]');
+    requiredInputs.forEach(input => {
+        input.addEventListener('input', validateProductForm);
+    });
+}
+
+function addNewSizeInput() {
+    const sizesContainer = document.getElementById('newProductSizes');
+    if (!sizesContainer) return;
+
+    const sizeItem = document.createElement('div');
+    sizeItem.className = 'size-item';
+    sizeItem.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;';
+    sizeItem.innerHTML = `
+        <input type="text" placeholder="37" class="size-number" maxlength="3" style="text-align: center; padding: 4px;">
+        <input type="number" placeholder="0" class="size-stock" min="0" max="999" style="padding: 4px;">
+        <button type="button" class="remove-size" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">✕</button>
+    `;
+
+    sizesContainer.appendChild(sizeItem);
+    
+    // Focus en el nuevo input
+    const newSizeInput = sizeItem.querySelector('.size-number');
+    if (newSizeInput) {
+        newSizeInput.focus();
+    }
+}
+
+function validateProductForm() {
+    const title = document.getElementById('newProductTitle')?.value.trim();
+    const brand = document.getElementById('newProductBrand')?.value.trim();
+    const price = document.getElementById('newProductPrice')?.value;
+    const image = document.getElementById('newProductImage')?.value.trim();
+    
+    const saveBtn = document.getElementById('saveNewProduct');
+    if (!saveBtn) return;
+
+    const isValid = title && brand && price && image && parseFloat(price) > 0;
+    saveBtn.disabled = !isValid;
+    
+    if (isValid) {
+        saveBtn.classList.remove('btn-disabled');
+        saveBtn.style.opacity = '1';
+    } else {
+        saveBtn.classList.add('btn-disabled');
+        saveBtn.style.opacity = '0.6';
+    }
+}
+
+async function handleSaveNewProduct() {
+    try {
+        // Recopilar datos del formulario
+        const productData = {
+            title: document.getElementById('newProductTitle')?.value.trim(),
+            brand: document.getElementById('newProductBrand')?.value.trim(),
+            price: parseFloat(document.getElementById('newProductPrice')?.value),
+            image_url: document.getElementById('newProductImage')?.value.trim()
+        };
+
+        // Validar datos básicos
+        if (!productData.title || !productData.brand || !productData.price || !productData.image_url) {
+            showNotification('Todos los campos marcados con * son obligatorios', 'error');
+            return;
+        }
+
+        if (productData.price <= 0) {
+            showNotification('El precio debe ser mayor a 0', 'error');
+            return;
+        }
+
+        // Recopilar tallas
+        const sizeInputs = document.querySelectorAll('.size-item');
+        const sizes = [];
+        
+        for (const sizeItem of sizeInputs) {
+            const sizeNumber = sizeItem.querySelector('.size-number')?.value.trim();
+            const sizeStock = parseInt(sizeItem.querySelector('.size-stock')?.value) || 0;
+            
+            if (sizeNumber) {
+                // Verificar que no haya tallas duplicadas
+                if (sizes.some(s => s.size === sizeNumber)) {
+                    showNotification(`La talla ${sizeNumber} está duplicada`, 'error');
+                    return;
+                }
+                
+                sizes.push({
+                    size: sizeNumber,
+                    stock: sizeStock
+                });
+            }
+        }
+
+        if (sizes.length === 0) {
+            showNotification('Debe agregar al menos una talla', 'error');
+            return;
+        }
+
+        // Mostrar loading
+        const saveBtn = document.getElementById('saveNewProduct');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border:2px solid #f3f3f3;border-top:2px solid #333;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;margin-right:8px;"></span> Creando...';
+        }
+
+        // Crear producto
+        const newProduct = await createProduct(productData, sizes);
+        
+        if (newProduct) {
+            showNotification(`Producto "${productData.title}" creado exitosamente`, 'success');
+            clearProductForm();
+            
+            // Cambiar a pestaña de stock para ver el producto creado
+            document.querySelector('.tab-btn[data-tab="stock"]')?.click();
+            
+            Logger.info('Producto creado:', newProduct);
+        }
+
+    } catch (error) {
+        Logger.error('Error creando producto:', error);
+        showNotification(`Error: ${error.message}`, 'error');
+    } finally {
+        // Restaurar botón
+        const saveBtn = document.getElementById('saveNewProduct');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span class="btn-icon">💾</span> Crear Producto';
+        }
+    }
+}
+
+async function createProduct(productData, sizes) {
+    const response = await fetch(`${CONFIG.API_BASE}/api/admin/products`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            password: getAdminPassword(),
+            product: productData,
+            sizes: sizes
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+function clearProductForm() {
+    const inputs = document.querySelectorAll('#productsTab input');
+    inputs.forEach(input => {
+        input.value = '';
+    });
+
+    // Resetear a una sola talla
+    const sizesContainer = document.getElementById('newProductSizes');
+    if (sizesContainer) {
+        sizesContainer.innerHTML = `
+            <div class="size-item" style="display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; align-items: center; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+                <input type="text" placeholder="36" class="size-number" maxlength="3" style="text-align: center; padding: 4px;">
+                <input type="number" placeholder="0" class="size-stock" min="0" max="999" style="padding: 4px;">
+                <button type="button" class="remove-size" style="background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">✕</button>
+            </div>
+        `;
+    }
+
+    validateProductForm();
+}
+    </script>
+</body>
+</html>
