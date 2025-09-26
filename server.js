@@ -24,6 +24,9 @@ app.use(express.json());
 app.use('/imagenes', express.static(path.join(__dirname, 'public/imagenes')));
 app.use('/styles.css', express.static(path.join(__dirname, 'public/styles.css')));
 
+// Después de las líneas existentes, agrega:
+app.use('/sitemap.xml', express.static(path.join(__dirname, 'public/sitemap.xml')));
+app.use('/robots.txt', express.static(path.join(__dirname, 'public/robots.txt')));
 // Servir SOLO el index.html en la raíz
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
